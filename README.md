@@ -13,7 +13,7 @@ Telefoon op slot of pagina herladen? Je komt vanzelf terug op je plek, met je pu
 ## Online zetten (GitHub Pages)
 
 Settings → Pages → *Deploy from a branch* → `main` / `/ (root)` → Save.
-Na een minuutje staat het op `https://jonfreak89.github.io/gn/`.
+Na een minuutje staat het op `https://jonfreak89.github.io/GN/`.
 
 ## Rondes
 
