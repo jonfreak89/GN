@@ -30,11 +30,17 @@ Na een minuutje staat het op `https://jonfreak89.github.io/GN/`.
 | Lingo | Raad het woord van vijf letters op je eigen telefoon, met toetsenbord |
 | De Puzzel | Twaalf woorden, drie verbanden van vier (zoals in De Slimste Mens) |
 | Teken & Raad | Teken je geheime opdracht, verzin nep-titels, zoek de echte |
+| Twee waarheden en een leugen | Schrijf drie dingen over jezelf, de rest zoekt de leugen |
+| Top 5 | De hete stoel zet vijf dingen op volgorde, de rest raadt het lijstje |
 | Finale | Zet in wat je durft op één laatste vraag |
 
 Extra's: de laatste plaats kiest de categorie, power-ups (Dubbel, 50/50, Stelen, Sabotage, Schild), troost-power-up voor de laatste na elke ronde, awards aan het eind, anonieme overslaan-knop bij 18+ vragen.
 
 **Teams:** ieder voor zich, 2 of 3 teams (Patat, Tulp, Kaas). Spelers kiezen hun team op hun telefoon of de spelleider husselt. Kleinere teams krijgen een eerlijke bonus. De spelleider kan ook per ronde kiezen of die meedoet. Kort = 6 rondes, normaal = 8, lang = 11; staan er meer rondes aan, dan kiest het spel er willekeurig een mix uit.
+
+**Ganzenbord:** kies als spelvorm *Ganzenbord* in plaats van *Quizshow*. Dan speel je korte rondes (kort 8, normaal 12, lang 16) en na elke ronde gooit iedereen op zijn telefoon de dobbelsteen. De beste drie van de ronde krijgen 3, 2 of 1 bonusstap. Met ganzen, brug, herberg, put, doolhof, gevangenis, dood, kansvakjes en sterren (power-up). Wie precies op 40 komt, wint.
+
+**Thema-avonden:** 🧙 Nerd-avond (fantasy, sci-fi, superhelden, games, film, wetenschap) of 📼 Jaren 80 & 90 (jaren, kinder-tv, reclames, muziek, games, film). Het thema verandert ook de look op TV en telefoon.
 
 **Spice levels:** 😇 Braaf (kennis en rare weetjes) · 😈 Pittig (+ donkere humor) · 🌶️ Stout (+ 18+).
 

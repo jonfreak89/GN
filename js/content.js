@@ -16,6 +16,10 @@
     { id: 'film', name: 'Films & series', emoji: '🎬', group: 'Kennis', spice: 1 },
     { id: 'games', name: 'Games', emoji: '🎮', group: 'Kennis', spice: 1 },
     { id: 'muziek', name: 'Muziek', emoji: '🎵', group: 'Kennis', spice: 1 },
+    // Nerd
+    { id: 'fantasy', name: 'Fantasy (Tolkien, Potter & co)', emoji: '🧙', group: 'Nerd', spice: 1 },
+    { id: 'scifi', name: 'Sci-fi (Dune, Star Wars & co)', emoji: '🚀', group: 'Nerd', spice: 1 },
+    { id: 'superhelden', name: 'Superhelden', emoji: '🦸', group: 'Nerd', spice: 1 },
     // Nostalgie
     { id: 'jaren', name: 'Jaren 80, 90 & 00', emoji: '📼', group: 'Nostalgie', spice: 1 },
     { id: 'kindertv', name: 'Kinder-tv van vroeger', emoji: '📺', group: 'Nostalgie', spice: 1 },

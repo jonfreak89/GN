@@ -91,6 +91,7 @@
     }
     renderBar();
     const v = view;
+    ['nerd', 'retro'].forEach((t) => document.body.classList.toggle('theme-' + t, v.theme === t));
     const json = JSON.stringify(Object.assign({}, v, { remaining: 0, deadline: 0 }));
     const live = v.screen === 'lobby' || v.screen === 'host' || v.screen === 'end';
     if (v.key !== shownKey || (live && json !== shownJson)) {
@@ -195,17 +196,20 @@
         <div class="card"><div class="label">Spice level</div><div class="seg" id="spice">${v.spiceList.map((x) => `<button data-v="${x.id}" class="${s.spice === x.id ? 'on' : ''}"><b>${x.emoji}</b>${x.name}</button>`).join('')}</div>
         <p class="sub" style="font-size:13px;margin:8px 0 0">${esc(GN.SPICE[s.spice].desc)}${s.spice === 3 ? ' · stoute vragen kun je anoniem overslaan' : ''}</p></div>
         <div class="card"><div class="label">Lengte</div><div class="seg" id="len">${Object.keys(v.lengths).map((k) => `<button data-v="${k}" class="${s.length === k ? 'on' : ''}"><b>${{ kort: '⚡', normaal: '🎲', lang: '🌙' }[k]}</b>${k}<br><small>${v.lengths[k]}</small></button>`).join('')}</div></div>
+        <div class="card"><div class="label">Spelvorm</div><div class="seg" id="mode">${[['quiz', '🎤', 'Quizshow', 'Punten tellen'], ['bord', '🪿', 'Ganzenbord', 'Punten = stappen']].map(([k, e, t, d]) => `<button data-v="${k}" class="${(s.mode || 'quiz') === k ? 'on' : ''}"><b>${e}</b>${t}<br><small>${d}</small></button>`).join('')}</div>
+          ${s.mode === 'bord' ? '<p class="sub" style="font-size:13px;margin:8px 0 0">Na elke korte ronde gooit iedereen de dobbelsteen. De beste drie krijgen bonusstappen. Wie het eerst op vakje 40 staat, wint.</p>' : ''}</div>
+        <div class="card"><div class="label">Thema</div><div class="seg" id="theme">${[{ id: '', name: 'Alles', emoji: '🎲' }].concat(v.themeList || []).map((t) => `<button data-v="${t.id}" class="${(s.theme || '') === t.id ? 'on' : ''}"><b>${t.emoji}</b>${esc(t.name)}</button>`).join('')}</div></div>
         <div class="card"><div class="label">Teams</div><div class="seg" id="teams">${[[0, '🙋', 'Ieder voor zich'], [2, '⚔️', '2 teams'], [3, '🔱', '3 teams']].map(([n, e, t]) => `<button data-v="${n}" class="${(s.teams || 0) === n ? 'on' : ''}"><b>${e}</b>${t}</button>`).join('')}</div>
           ${s.teams ? '<button class="cta ghost small" id="shuffle" style="margin-top:8px">🎲 Teams eerlijk husselen</button>' : ''}</div>
         ${teamPicker(v)}
-        <div class="card"><div class="label">Rondes (tik om aan of uit te zetten)</div><div class="rounds">${v.roundList.map((r) => `<button data-round="${r.id}" class="${s.rounds && s.rounds[r.id] === false ? '' : 'on'}">${r.emoji} ${esc(r.title)}</button>`).join('')}<button class="on" disabled>💰 De Finale</button></div></div>
+        <div class="card"><div class="label">Rondes (tik om aan of uit te zetten)</div><div class="rounds">${v.roundList.map((r) => `<button data-round="${r.id}" class="${s.rounds && s.rounds[r.id] === false ? '' : 'on'}">${r.emoji} ${esc(r.title)}</button>`).join('')}${s.mode === 'bord' ? '' : '<button class="on" disabled>💰 De Finale</button>'}</div></div>
         <div class="card">
           <div class="toggle"><span>Ik speel zelf mee</span><button class="sw ${s.gmPlays ? 'on' : ''}" id="gmplays" aria-label="Meespelen"></button></div>
           <div class="toggle"><span>TV leest vragen voor 🔊</span><button class="sw ${s.voice ? 'on' : ''}" id="voice" aria-label="Voorlezen"></button></div>
         </div>
         <div class="card"><div class="label">Spelers (${v.players.length})</div><div class="plist">${playerRows(v)}</div>
           <div class="row" style="margin-top:10px"><button class="cta ghost small" id="addbot">+ Bot</button><button class="cta ghost small" id="editp">Mijn profiel</button></div></div>
-        <button class="cta" id="start" ${v.players.some((p) => p.playing) ? '' : 'disabled'}>Start de quiz 🚀</button>
+        <button class="cta" id="start" ${v.players.some((p) => p.playing) ? '' : 'disabled'}>${s.mode === 'bord' ? 'Start ganzenbord 🎲' : 'Start de quiz 🚀'}</button>
         <button class="cta ghost small" id="clearseen">Vragengeheugen wissen</button>`;
     },
     host(v) {
@@ -361,6 +365,39 @@
           <button class="cta ghost small" id="undo">↶ Terug</button><button class="cta ghost small" id="clear">Wissen</button></div>
         <button class="cta" id="send">Klaar ✓</button>`;
     },
+    lgwrite(v) {
+      if (v.answered) {
+        const a = v.myAnswer;
+        return waitBox('Ingeleverd 😇', a ? a.s.map((t, i) => `${i === a.lie ? '🤥' : '✅'} ${esc(t)}`).join('<br>') : '');
+      }
+      ui.lgs = ui.lgs || ['', '', ''];
+      return `<div class="catline">🤥 Twee waarheden en een leugen</div>
+        <div class="q">Drie dingen over jou. Twee waar, één gelogen.</div>
+        <div class="sub">Tip: maak de waarheid ongeloofwaardig en de leugen heel gewoon.</div>
+        ${[0, 1, 2].map((i) => `<div class="lgrow"><input class="field" id="lg${i}" maxlength="90" autocomplete="off" placeholder="Uitspraak ${i + 1}" value="${esc(ui.lgs[i])}"><button class="lgtag ${ui.lie === i ? 'on' : ''}" data-lie="${i}">${ui.lie === i ? '🤥 leugen' : '✅ waar'}</button></div>`).join('')}
+        <div class="sub center" id="lghint">Tik bij één uitspraak op ✅ om hem de leugen te maken</div>
+        <button class="cta pink" id="send" disabled>Insturen</button>`;
+    },
+    lgguess(v) {
+      if (v.answered) return waitBox('Gekozen!', `Jij denkt dat dit gelogen is:<br><b>${esc(v.statements[v.myAnswer])}</b>`);
+      return `<div class="catline">🤥 ${esc(v.authorName)} beweert…</div><div class="q">Welke is gelogen?</div>
+        ${optionButtons(v.statements)}`;
+    },
+    top5(v) {
+      if (v.answered) return waitBox(v.isHot ? 'Jouw lijstje staat!' : 'Volgorde binnen!', v.myAnswer.map((i, n) => `${n + 1}. ${esc(v.items[i])}`).join('<br>')) + foot(v);
+      ui.order = ui.order || [];
+      return `<div class="catline">🏅 Top 5${v.isHot ? ' · 🔥 jij zit in de hete stoel' : ''}</div>${qHtml(v.q)}
+        <div class="sub">${esc(v.sub)}<br>Tik in volgorde: eerst <b>${esc(v.lo)}</b>, als laatste <b>${esc(v.hi)}</b>.</div>
+        <div class="choices">${v.items.map((t, i) => `<button class="ch" data-o="${i}"><span>${esc(t)}</span></button>`).join('')}</div>
+        <div class="row"><button class="cta ghost" id="reset">Opnieuw</button><button class="cta" id="send" disabled>Verstuur</button></div>${foot(v)}`;
+    },
+    roll(v) {
+      if (v.skipped) return `<div class="big">⏸️</div><div class="title">Beurt overslaan</div><p class="sub center">Je staat op vakje ${v.pos}. Volgende keer mag je weer.</p>`;
+      if (v.dice) return `<div class="dice show">${['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][v.dice]}</div><div class="title">Je gooide ${v.dice}${v.bonus ? ` + ${v.bonus} bonus` : ''}</div><p class="sub center">Kijk naar de TV waar je pion landt!</p>`;
+      return `<div class="catline">🪿 Ganzenbord · je staat op vakje ${v.pos}</div>
+        ${v.bonus ? `<div class="card" style="border-color:var(--mint);text-align:center">🎁 Goeie ronde! <b>+${v.bonus}</b> bonusstap${v.bonus > 1 ? 'pen' : ''}</div>` : ''}
+        <button class="dicebtn" id="roll">🎲<b>Gooi!</b></button>`;
+    },
     kicked() {
       return `<div class="big">👋</div><div class="title">Je bent uit het spel gehaald</div><button class="cta ghost" id="rejoin">Opnieuw meedoen</button>`;
     },
@@ -396,6 +433,8 @@
         if (!v.me.isGm) break;
         screen.querySelectorAll('#spice button').forEach((b) => (b.onclick = () => act('gm:settings', { settings: { spice: +b.dataset.v } })));
         screen.querySelectorAll('#len button').forEach((b) => (b.onclick = () => act('gm:settings', { settings: { length: b.dataset.v } })));
+        screen.querySelectorAll('#mode button').forEach((b) => (b.onclick = () => act('gm:settings', { settings: { mode: b.dataset.v } })));
+        screen.querySelectorAll('#theme button').forEach((b) => (b.onclick = () => act('gm:settings', { settings: { theme: b.dataset.v } })));
         on('#gmplays', () => act('gm:settings', { settings: { gmPlays: !v.settings.gmPlays } }));
         on('#voice', () => act('gm:settings', { settings: { voice: !v.settings.voice } }));
         on('#addbot', () => act('gm:addbot'));
@@ -433,7 +472,27 @@
         inp.onkeydown = (e) => { if (e.key === 'Enter') send(); };
         break;
       }
+      case 'lgwrite': {
+        const ok = () => { const b = $('#send'); if (b) b.disabled = !(ui.lgs.every((x) => x.trim()) && ui.lie != null); };
+        [0, 1, 2].forEach((i) => { const inp = $('#lg' + i); if (inp) inp.oninput = () => { ui.lgs[i] = inp.value; ok(); }; });
+        screen.querySelectorAll('[data-lie]').forEach((b) => (b.onclick = () => {
+          ui.lie = +b.dataset.lie;
+          screen.querySelectorAll('[data-lie]').forEach((x) => { const on = +x.dataset.lie === ui.lie; x.classList.toggle('on', on); x.textContent = on ? '🤥 leugen' : '✅ waar'; });
+          ok();
+        }));
+        on('#send', () => act('answer', { v: { s: ui.lgs.map((x) => x.trim()), lie: ui.lie } }));
+        ok();
+        break;
+      }
+      case 'lgguess':
+        screen.querySelectorAll('[data-i]').forEach((b) => (b.onclick = () => act('answer', { v: +b.dataset.i })));
+        break;
+      case 'roll':
+        on('#roll', () => { const b = $('#roll'); if (b) { b.classList.add('shake'); b.disabled = true; } setTimeout(() => act('roll'), 450); });
+        break;
+      case 'top5':
       case 'order': {
+        const need = v.screen === 'top5' ? 5 : 4;
         const paint = () => {
           screen.querySelectorAll('[data-o]').forEach((b) => {
             const i = +b.dataset.o;
@@ -444,7 +503,7 @@
             if (pos >= 0) b.insertAdjacentHTML('beforeend', `<span class="ord">${pos + 1}</span>`);
           });
           const s = $('#send');
-          if (s) s.disabled = ui.order.length !== 4;
+          if (s) s.disabled = ui.order.length !== need;
         };
         screen.querySelectorAll('[data-o]').forEach((b) => (b.onclick = () => {
           const i = +b.dataset.o;

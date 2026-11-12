@@ -147,3 +147,18 @@ input[type=range] { width: 100%; accent-color: var(--amber); height: 40px; }
 .sw-w i { display: block; border-radius: 50%; background: var(--text); }
 .sw-w.on { border-color: var(--amber); }
 .tools .cta.small { width: auto; }
+
+/* twee waarheden */
+.lgrow { display: flex; gap: 8px; align-items: center; }
+.lgrow .field { flex: 1; margin: 0; font-size: 16px; padding: 14px 12px; }
+.lgtag { flex: none; border: 2px solid var(--line); background: var(--ink-2); border-radius: 14px; padding: 12px 10px; font-size: 14px; font-weight: 700; min-width: 92px; }
+.lgtag.on { border-color: var(--pink); background: rgba(255, 79, 139, 0.2); color: var(--pink); }
+
+/* ganzenbord */
+.dicebtn { display: grid; place-items: center; gap: 6px; width: min(70vw, 260px); aspect-ratio: 1; margin: 18px auto; border-radius: 36px; border: 0; background: linear-gradient(145deg, var(--amber), var(--pink)); color: var(--ink); font-size: 92px; box-shadow: 0 14px 40px rgba(255, 79, 139, 0.35); }
+.dicebtn b { font-family: var(--display); font-size: 26px; }
+.dicebtn:active { transform: scale(0.96); }
+.dicebtn.shake { animation: shake 0.45s; }
+@keyframes shake { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-18deg) scale(1.05); } 40% { transform: rotate(14deg); } 60% { transform: rotate(-10deg); } 80% { transform: rotate(6deg); } }
+.dice { text-align: center; font-size: 140px; line-height: 1; margin-top: 10px; color: var(--amber); }
+.dice.show { animation: pop 0.5s both; }

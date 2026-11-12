@@ -3,7 +3,7 @@
 (function (root) {
   const GN = (root.GN = root.GN || (typeof require !== 'undefined' ? require('./content.js') : {}));
 
-  const TIME = { catpick: 15, mc: 30, tf: 15, num: 40, bet: 25, bluffWrite: 60, bluffVote: 30, order: 45, ken: 35, wie: 30, poll: 40, wzWrite: 60, wzGuess: 20, hl: 15, lingo: 120, puzzel: 120, tkDraw: 90, tkFake: 40, tkVote: 25, wager: 30, final: 35 };
+  const TIME = { catpick: 15, mc: 30, tf: 15, num: 40, bet: 25, bluffWrite: 60, bluffVote: 30, order: 45, ken: 35, wie: 30, poll: 40, wzWrite: 60, wzGuess: 20, hl: 15, lingo: 120, puzzel: 120, tkDraw: 90, tkFake: 40, tkVote: 25, lgWrite: 120, lgGuess: 25, top5: 45, roll: 20, wager: 30, final: 35 };
   const SHOW = { intro: 6, reveal: 9, revealShort: 6, revealLong: 12, scores: 9 };
 
   const ROUNDS = {
@@ -17,6 +17,8 @@
     lingo: { title: 'Lingo', emoji: '🟩', desc: 'Raad het woord van vijf letters. De eerste letter krijg je cadeau. Hoe minder pogingen, hoe meer punten.', pick: 0 },
     puzzel: { title: 'De Puzzel', emoji: '🧩', desc: 'Twaalf woorden, drie verbanden. Vind de groepjes van vier, maar je mag maar drie keer fout zitten.', pick: 0 },
     teken: { title: 'Teken & Raad', emoji: '🎨', desc: 'Teken je geheime opdracht. Daarna verzint iedereen een nep-titel en zoek je de echte.', pick: 0 },
+    leugen: { title: 'Twee waarheden en een leugen', emoji: '🤥', desc: 'Schrijf twee waarheden en één leugen over jezelf. Daarna zoekt iedereen bij elkaar de leugen.', pick: 0 },
+    top5: { title: 'Top 5', emoji: '🏅', desc: 'Iemand in de hete stoel zet vijf dingen op volgorde. De rest raadt hoe.', pick: 0 },
     wiezei: { title: 'Wie zei dit?', emoji: '🗯️', desc: 'Iedereen schrijft anoniem een antwoord. Daarna raad je wie wat schreef.', pick: 0 },
     final: { title: 'De Finale', emoji: '💰', desc: 'Zet zoveel punten in als je durft op één laatste vraag.', pick: 0 },
   };
@@ -24,9 +26,22 @@
   // aantal vragen per ronde, voor kort / normaal / lang
   const COUNTS = {
     mc: [3, 5, 6], tf: [4, 5, 6], hl: [5, 6, 7], num: [2, 3, 3], lingo: [2, 2, 3], bluff: [2, 3, 3], order: [2, 3, 3],
-    puzzel: [1, 1, 2], teken: [1, 1, 1], persoonlijk: [3, 4, 5], wiezei: [1, 1, 2],
+    puzzel: [1, 1, 2], teken: [1, 1, 1], persoonlijk: [3, 4, 5], top5: [2, 3, 3], leugen: [1, 1, 1], wiezei: [1, 1, 2],
   };
-  const ORDER = ['mc', 'tf', 'hl', 'num', 'lingo', 'bluff', 'order', 'puzzel', 'teken', 'persoonlijk', 'wiezei'];
+  const ORDER = ['mc', 'tf', 'hl', 'num', 'lingo', 'bluff', 'order', 'puzzel', 'teken', 'persoonlijk', 'top5', 'leugen', 'wiezei'];
+  // Thema-avonden: beperken de categorieën (andere rondes blijven gewoon meedoen)
+  const THEMES = {
+    nerd: { name: 'Nerd-avond', emoji: '🧙', cats: ['fantasy', 'scifi', 'superhelden', 'games', 'film', 'wetenschap'] },
+    retro: { name: 'Jaren 80 & 90', emoji: '📼', cats: ['jaren', 'kindertv', 'reclames', 'muziek', 'games', 'film'] },
+  };
+  // Ganzenbord: 40 vakjes, met de klassieke speciale vakjes
+  const BOARD_END = 40;
+  const BOARD = {};
+  [5, 9, 14, 18, 23, 27, 32, 36].forEach((i) => (BOARD[i] = 'gans'));
+  [3, 11, 16, 29, 35].forEach((i) => (BOARD[i] = 'kans'));
+  [8, 21, 33].forEach((i) => (BOARD[i] = 'ster'));
+  Object.assign(BOARD, { 6: 'brug', 19: 'herberg', 25: 'doolhof', 31: 'put', 34: 'gevangenis', 38: 'dood' });
+  const BOARD_ROUNDS = { kort: 8, normaal: 12, lang: 16 };
   const SLOTS = { kort: 6, normaal: 8, lang: 11 };
   const LENGTHS = { kort: '6 rondes, ± 25 min', normaal: '8 rondes, ± 35 min', lang: '11 rondes, ± 50 min' };
   const ROUND_KEYS = ORDER.slice();
@@ -48,6 +63,12 @@
   const AVATARS = ['🦊', '🐸', '🐙', '🦄', '🐻', '🐼', '🐯', '🦁', '🐷', '🐵', '🦉', '🐔', '🦖', '🐢', '🦀', '🐝', '👽', '🤖', '👻', '🎃', '🧙', '🧛', '🧟', '🥷', '🤠', '🦩', '🦦', '🐌', '🥨', '🍄'];
   const COLORS = ['#ff5d73', '#ffb627', '#3ddc97', '#4cc9f0', '#b388ff', '#ff8fab', '#f9f871', '#62d2a2', '#ff9a3c', '#7aa2ff', '#e36bae', '#9be564'];
   const BOT_NAMES = ['Bot Bertje', 'Bot Truus', 'Bot Henk', 'Bot Ingrid', 'Bot Kees', 'Bot Greet'];
+  const BOT_LIES = [
+    { s: ['Ik ben een robot', 'Ik heb nog nooit geslapen', 'Ik ben dol op kaas'], lie: 2 },
+    { s: ['Ik draai op stroom', 'Ik heb een rijbewijs', 'Ik kan heel snel rekenen'], lie: 1 },
+    { s: ['Ik ben ooit gecrasht', 'Ik heb een kat', 'Ik praat met andere computers'], lie: 1 },
+    { s: ['Ik ben in Nederland gemaakt', 'Ik weet alles van frikandellen', 'Ik droom van schapen'], lie: 2 },
+  ];
   const BOT_LINES = ['Error 404: grap niet gevonden', 'Ik ben een robot, ik voel niks', 'Mijn moeder was een broodrooster', 'Bliep bloep', 'Dat zeg ik alleen tegen mijn advocaat', 'Geen commentaar'];
 
   const norm = (s) =>
@@ -71,7 +92,7 @@
         players: {},
         order: [],
         gm: null,
-        settings: { spice: 2, length: 'normaal', gmPlays: true, voice: false, teams: 0, rounds: {} },
+        settings: { spice: 2, length: 'normaal', gmPlays: true, voice: false, teams: 0, rounds: {}, theme: '', mode: 'quiz' },
         step: { kind: 'lobby', id: 0 },
         paused: null,
         plan: [],
@@ -207,7 +228,11 @@
     unseenCount(type, cat) { return this.poolFor(type, cat).filter((q) => !this.seen[q.id]).length + this.gensFor(type, cat).length * 50; }
     eligibleCats(type) {
       const spice = this.s.settings.spice;
-      return GN.CATEGORIES.filter((c) => c.spice <= spice && (this.poolFor(type, c.id).length || this.gensFor(type, c.id).length));
+      const all = GN.CATEGORIES.filter((c) => c.spice <= spice && (this.poolFor(type, c.id).length || this.gensFor(type, c.id).length));
+      const th = THEMES[this.s.settings.theme];
+      if (!th) return all;
+      const inTheme = all.filter((c) => th.cats.includes(c.id));
+      return inTheme.length ? inTheme : all;
     }
     catOptions(type, n = 3) {
       const cats = this.eligibleCats(type);
@@ -283,6 +308,8 @@
         p.score = 0;
         p.stats = this.blankStats();
         p.powerups = [this.pick(PU_KEYS)];
+        p.pos = 0;
+        p.skip = 0;
       });
       s.plan = this.buildPlan().map(([type, count]) => ({ type, count }));
       if (this.teamCount()) this.players.forEach((p) => { if (p.playing && (p.team == null || p.team >= this.teamCount())) p.team = this.smallestTeam(p.id); });
@@ -291,6 +318,7 @@
     }
     buildPlan() {
       const s = this.s;
+      if (s.settings.mode === 'bord') return this.buildBoardPlan();
       const on = s.settings.rounds || {};
       const L = { kort: 0, normaal: 1, lang: 2 }[s.settings.length] || 0;
       const slots = SLOTS[s.settings.length] || 6;
@@ -313,6 +341,24 @@
       plan.push(['final', 1]);
       return plan;
     }
+    buildBoardPlan() {
+      // Ganzenbord: korte rondes achter elkaar, tussendoor dobbelen. Geen finale: wie het eerst op 40 staat wint.
+      const s = this.s;
+      const on = s.settings.rounds || {};
+      const n = BOARD_ROUNDS[s.settings.length] || 12;
+      const types = ORDER.filter((t) => on[t] !== false);
+      if (!types.length) types.push('mc');
+      const short = { mc: 3, tf: 4, hl: 4, num: 2, lingo: 1, bluff: 2, order: 2, puzzel: 1, teken: 1, persoonlijk: 3, top5: 2, leugen: 1, wiezei: 1 };
+      const plan = [];
+      let bag = [];
+      while (plan.length < n) {
+        if (!bag.length) bag = this.shuffle(types);
+        const t = bag.shift();
+        if (plan.length && plan[plan.length - 1][0] === t && types.length > 1) { bag.push(t); continue; }
+        plan.push([t, short[t] || 2]);
+      }
+      return plan;
+    }
     nextRound() {
       const s = this.s;
       s.roundIdx++;
@@ -321,7 +367,11 @@
       if (r.type === 'persoonlijk' && this.contestants().length < 2) return this.nextRound();
       if (r.type === 'wiezei' && this.contestants().length < 3) return this.nextRound();
       if (r.type === 'teken' && this.contestants().length < 3) return this.nextRound();
-      s.round = { type: r.type, count: r.count, done: 0, cat: null, usedCats: [] };
+      if (r.type === 'leugen' && this.contestants().length < 3) return this.nextRound();
+      if (r.type === 'top5' && this.contestants().length < 2) return this.nextRound();
+      const startScores = {};
+      this.contestants().forEach((p) => (startScores[p.id] = p.score));
+      s.round = { type: r.type, count: r.count, done: 0, cat: null, usedCats: [], startScores };
       const R = ROUNDS[r.type];
       this.newStep('intro', { round: r.type, title: R.title, emoji: R.emoji, desc: R.desc, roundNo: s.roundIdx + 1, rounds: s.plan.length, count: r.count }, SHOW.intro);
     }
@@ -337,6 +387,8 @@
       if (r.type === 'lingo') return this.askLingo();
       if (r.type === 'puzzel') return this.askPuzzel();
       if (r.type === 'teken') return this.askTeken();
+      if (r.type === 'leugen') return this.askLeugen();
+      if (r.type === 'top5') return this.askTop5();
       if (R.pick && r.done % R.pick === 0) return this.catPick();
       this.ask();
     }
@@ -699,6 +751,184 @@
       return strokes;
     }
 
+    // ---------- Twee waarheden en een leugen ----------
+    askLeugen() {
+      const r = this.s.round;
+      r.lg = null;
+      this.newStep('lgWrite', { qno: r.done + 1, qcount: r.count }, TIME.lgWrite);
+    }
+    lgStart() {
+      const st = this.s.step;
+      const r = this.s.round;
+      const entries = this.shuffle(Object.keys(st.answers).filter((pid) => this.s.players[pid])).slice(0, 6).map((pid) => {
+        const a = st.answers[pid];
+        const order = this.shuffle([0, 1, 2]);
+        return { author: pid, statements: order.map((i) => a.s[i]), lie: order.indexOf(a.lie) };
+      });
+      if (entries.length < 2) { r.done++; return this.nextQuestion(); }
+      r.lg = { entries, idx: 0 };
+      this.lgGuess();
+    }
+    lgGuess() {
+      const r = this.s.round;
+      const e = r.lg.entries[r.lg.idx];
+      this.newStep('lgGuess', { author: e.author, statements: e.statements, lie: e.lie, eno: r.lg.idx + 1, etotal: r.lg.entries.length, qno: r.done + 1, qcount: r.count }, TIME.lgGuess);
+    }
+    revealLg() {
+      const st = this.s.step;
+      const gains = {};
+      const right = [];
+      let fooled = 0;
+      Object.entries(st.answers).forEach(([pid, v]) => {
+        if (v === st.lie) { gains[pid] = 100; right.push(pid); const p = this.s.players[pid]; if (p) p.stats.kenCorrect++; }
+        else fooled++;
+      });
+      if (fooled) { gains[st.author] = 50 * fooled; const a = this.s.players[st.author]; if (a) a.stats.fooled += fooled; }
+      Object.entries(gains).forEach(([pid, g]) => { const p = this.s.players[pid]; if (p) p.score += g; });
+      this.reveal({ of: 'lg', author: st.author, statements: st.statements, lie: st.lie, votes: st.answers, right, gains, events: [], eno: st.eno, etotal: st.etotal, qno: st.qno, qcount: st.qcount }, SHOW.revealShort + 1);
+    }
+
+    // ---------- Top 5 ----------
+    askTop5() {
+      const r = this.s.round;
+      const spice = this.s.settings.spice;
+      const pool = (GN.TOP5 || []).filter((t) => (t.spice || 1) <= spice);
+      if (!pool.length) { r.done = r.count; return this.roundScores(); }
+      const fresh = pool.filter((t) => !this.seen['t5:' + GN.hash(t.q)]);
+      const t = this.pick(fresh.length ? fresh : pool);
+      this.markSeen('t5:' + GN.hash(t.q));
+      const humans = this.humans().filter((h) => h.connected);
+      const players = humans.length ? humans : this.contestants();
+      this.s.lastHot = (this.s.lastHot + 1) % players.length;
+      const hot = players[this.s.lastHot];
+      this.newStep('top5', {
+        hot: hot.id, q: t, text: t.q.replace(/\{naam\}/g, hot.name), self: t.self || t.q.replace(/\{naam\}/g, 'jij'),
+        items: this.shuffle(t.items), lo: t.lo, hi: t.hi, qno: r.done + 1, qcount: r.count,
+      }, TIME.top5);
+    }
+    revealTop5() {
+      const st = this.s.step;
+      const hotAns = st.answers[st.hot];
+      const gains = {};
+      const scoresBy = {};
+      let good = 0;
+      if (hotAns) {
+        Object.entries(st.answers).forEach(([pid, a]) => {
+          if (pid === st.hot) return;
+          let n = 0;
+          a.forEach((x, i) => { if (x === hotAns[i]) n++; });
+          scoresBy[pid] = n;
+          const g = n * 20 + (n === 5 ? 50 : 0);
+          if (g) gains[pid] = g;
+          if (n >= 3) { good++; const p = this.s.players[pid]; if (p) p.stats.kenCorrect++; }
+        });
+        if (good) gains[st.hot] = 25 * good;
+      }
+      Object.entries(gains).forEach(([pid, g]) => { const p = this.s.players[pid]; if (p) p.score += g; });
+      this.reveal({ of: 'top5', hot: st.hot, text: st.text, items: st.items, hotAns, lo: st.lo, hi: st.hi, scoresBy, gains, events: [], qno: st.qno, qcount: st.qcount }, SHOW.revealLong);
+    }
+
+    // ---------- Ganzenbord ----------
+    boardTurn() {
+      const s = this.s;
+      const r = s.round;
+      // bonusstappen voor de beste spelers van de ronde die net voorbij is
+      const gained = this.contestants().map((p) => ({ id: p.id, g: p.score - ((r && r.startScores && r.startScores[p.id]) || 0) }))
+        .filter((x) => x.g > 0).sort((a, b) => b.g - a.g);
+      const bonus = {};
+      const steps = [3, 2, 1];
+      let rank = 0;
+      gained.forEach((x, i) => {
+        if (i > 0 && x.g < gained[i - 1].g) rank = i;
+        if (rank < 3) bonus[x.id] = steps[rank];
+      });
+      const dice = {};
+      const answers = {};
+      // wie een beurt moet overslaan, gooit niet
+      this.contestants().forEach((p) => { if (p.skip > 0) { dice[p.id] = 0; answers[p.id] = 'skip'; } });
+      this.newStep('roll', { bonus, dice, round: r ? r.type : null }, TIME.roll);
+      Object.assign(this.s.step.answers, answers);
+      this.checkAllIn();
+    }
+    rollDice(p) {
+      const st = this.s.step;
+      if (st.kind !== 'roll' || st.answers[p.id] !== undefined) return;
+      st.dice[p.id] = 1 + Math.floor(this.rand() * 6);
+      st.answers[p.id] = true;
+      this.changed();
+      this.checkAllIn();
+    }
+    boardMove() {
+      const st = this.s.step;
+      const ps = this.contestants();
+      ps.forEach((p) => { if (st.answers[p.id] === undefined) st.dice[p.id] = 1 + Math.floor(this.rand() * 6); });
+      const moves = [];
+      let winner = null;
+      const bounce = (x) => (x > BOARD_END ? BOARD_END - (x - BOARD_END) : Math.max(0, x));
+      ps.forEach((p) => {
+        const from = p.pos || 0;
+        const ev = [];
+        if (p.skip > 0) {
+          p.skip--;
+          moves.push({ id: p.id, from, to: from, dice: 0, bonus: 0, events: ['⏸️ moet deze beurt overslaan'] });
+          return;
+        }
+        const d = st.dice[p.id] || 0;
+        const b = st.bonus[p.id] || 0;
+        const steps = d + b;
+        let pos = bounce(from + steps);
+        if (from + steps > BOARD_END) ev.push('↩️ te ver, terug gekaatst');
+        for (let guard = 0; guard < 6; guard++) {
+          const sq = BOARD[pos];
+          if (!sq || pos === BOARD_END) break;
+          if (sq === 'gans') { ev.push(`🪿 gans: nog ${steps} verder`); pos = bounce(pos + steps); continue; }
+          if (sq === 'brug') { ev.push('🌉 brug: door naar 12'); pos = 12; continue; }
+          if (sq === 'doolhof') { ev.push('🌀 doolhof: terug naar 18'); pos = 18; continue; }
+          if (sq === 'dood') { ev.push('💀 dood: terug naar 10'); pos = 10; continue; }
+          if (sq === 'herberg') { ev.push('🍺 herberg: volgende beurt overslaan'); p.skip = 1; break; }
+          if (sq === 'put') { ev.push('🕳️ in de put: volgende beurt overslaan'); p.skip = 1; break; }
+          if (sq === 'gevangenis') { ev.push('🔒 gevangenis: volgende beurt overslaan'); p.skip = 1; break; }
+          if (sq === 'ster') {
+            if (p.powerups.length < 3) { const t = this.pick(PU_KEYS); p.powerups.push(t); ev.push(`⭐ power-up: ${POWERUPS[t].emoji} ${POWERUPS[t].name}`); }
+            else ev.push('⭐ ster, maar je zakken zitten al vol');
+            break;
+          }
+          if (sq === 'kans') {
+            const k = this.pick(['vooruit', 'achteruit', 'punten', 'ruil']);
+            if (k === 'vooruit') { ev.push('❓ kans: 3 vooruit'); pos = bounce(pos + 3); continue; }
+            if (k === 'achteruit') { ev.push('❓ kans: 3 achteruit'); pos = Math.max(0, pos - 3); continue; }
+            if (k === 'punten') { p.score += 100; ev.push('❓ kans: 100 bonuspunten'); break; }
+            const others = ps.filter((x) => x.id !== p.id);
+            if (others.length) {
+              const o = this.pick(others);
+              const op = o.pos || 0;
+              o.pos = pos;
+              ev.push(`❓ kans: ruilt van plek met ${o.name}!`);
+              pos = op;
+            }
+            break;
+          }
+          break;
+        }
+        p.pos = pos;
+        if (pos === BOARD_END && !winner) winner = p.id;
+        moves.push({ id: p.id, from, to: pos, dice: d, bonus: b, events: ev });
+      });
+      // posities na ruilen kloppen al in p.pos; 'to' bijwerken voor wie geruild werd
+      moves.forEach((m) => (m.to = this.s.players[m.id] ? this.s.players[m.id].pos : m.to));
+      const positions = {};
+      ps.forEach((p) => (positions[p.id] = p.pos || 0));
+      // na alle ruilacties: wie staat er echt op de finish?
+      if (winner && positions[winner] !== BOARD_END) winner = null;
+      if (!winner) { const w = ps.find((p) => p.pos === BOARD_END); winner = w ? w.id : null; }
+      this.newStep('board', { moves, positions, winner, last: this.s.roundIdx >= this.s.plan.length - 1 }, 12);
+    }
+    afterBoard() {
+      const st = this.s.step;
+      if (st.winner || st.last) return this.endGame();
+      this.nextRound();
+    }
+
     startFinal() {
       const cats = this.eligibleCats('mc');
       const cat = this.pick(cats).id;
@@ -710,12 +940,14 @@
     scheduleBots() {
       this.botQueue = [];
       const st = this.s.step;
-      const answering = ['catpick', 'mc', 'tf', 'num', 'bet', 'bluffWrite', 'bluffVote', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'wzGuess', 'hl', 'lingo', 'puzzel', 'tkDraw', 'tkFake', 'tkVote', 'wager', 'final'];
+      const answering = ['catpick', 'mc', 'tf', 'num', 'bet', 'bluffWrite', 'bluffVote', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'wzGuess', 'hl', 'lingo', 'puzzel', 'tkDraw', 'tkFake', 'tkVote', 'lgWrite', 'lgGuess', 'top5', 'roll', 'wager', 'final'];
       if (!answering.includes(st.kind)) return;
       this.players.filter((p) => p.isBot && p.playing).forEach((b) => {
         if (st.kind === 'catpick' && st.picker !== b.id) return;
         if (st.kind === 'wzGuess' && st.author === b.id) return;
         if ((st.kind === 'tkFake' || st.kind === 'tkVote') && st.artist === b.id) return;
+        if (st.kind === 'lgGuess' && st.author === b.id) return;
+        if (st.kind === 'roll' && st.answers[b.id] !== undefined) return;
         this.botQueue.push({ at: this.now() + (1.5 + this.rand() * 6) * 1000, id: b.id, step: st.id });
       });
     }
@@ -757,6 +989,13 @@
           return;
         }
         case 'tkDraw': return this.action(id, { a: 'draw', v: this.botScribble() });
+        case 'lgWrite': {
+          const set = this.pick(BOT_LIES);
+          return this.action(id, { a: 'answer', v: { s: set.s.slice(), lie: set.lie } });
+        }
+        case 'lgGuess': return this.action(id, { a: 'answer', v: Math.floor(R() * 3) });
+        case 'top5': return this.action(id, { a: 'answer', v: this.shuffle([0, 1, 2, 3, 4]) });
+        case 'roll': return this.action(id, { a: 'roll' });
         case 'tkFake': {
           const pool = (GN.TEKEN || []).map((t) => t.q).filter((q) => norm(q) !== norm(st.prompt));
           return this.action(id, { a: 'answer', v: pool.length ? this.pick(pool) : 'Een kat op een fiets' });
@@ -817,11 +1056,12 @@
         return;
       }
       if (act.a === 'skip') {
-        if (['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'hl', 'lingo', 'puzzel'].includes(st.kind) && this.skippable()) this.skipQuestion(true);
+        if (['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'hl', 'lingo', 'puzzel', 'top5'].includes(st.kind) && this.skippable()) this.skipQuestion(true);
         return;
       }
       if (act.a === 'powerup') return this.usePowerup(p, act);
       if (act.a === 'guess' && st.kind === 'lingo') return this.lingoGuess(p, act.v);
+      if (act.a === 'roll') return this.rollDice(p);
       if (act.a === 'group' && st.kind === 'puzzel') return this.puzzelGroup(p, act.v);
       if (act.a === 'draw' && st.kind === 'tkDraw') {
         if (st.answers[id] !== undefined) return;
@@ -851,6 +1091,20 @@
           break;
         case 'hl':
           if (v !== 0 && v !== 1) return;
+          break;
+        case 'lgWrite': {
+          if (!v || !Array.isArray(v.s) || v.s.length !== 3 || ![0, 1, 2].includes(v.lie)) return;
+          const ss = v.s.map((x) => String(x || '').trim().slice(0, 90));
+          if (ss.some((x) => !x)) return;
+          st.answers[id] = { s: ss, lie: v.lie };
+          this.changed();
+          return this.checkAllIn();
+        }
+        case 'lgGuess':
+          if (id === st.author || ![0, 1, 2].includes(v)) return;
+          break;
+        case 'top5':
+          if (!Array.isArray(v) || v.length !== 5 || new Set(v).size !== 5 || v.some((x) => !(x >= 0 && x < 5))) return;
           break;
         case 'tkFake': {
           if (id === st.artist) return;
@@ -916,6 +1170,7 @@
       const st = this.s.step;
       if (!st.q) return false;
       if (['hl', 'lingo', 'puzzel'].includes(st.kind)) return false;
+      if (st.kind === 'top5') return (st.q.spice || 1) >= 3;
       if (['ken', 'wie', 'poll', 'wzWrite'].includes(st.kind)) return (st.q.spice || 1) >= 3;
       return GN.qSpice(st.q) >= 3;
     }
@@ -927,6 +1182,7 @@
       if (this.s.round.type === 'persoonlijk') return this.askPersonal();
       if (this.s.round.type === 'wiezei') return this.askWz();
       if (this.s.round.type === 'lingo') return this.askLingo();
+      if (this.s.round.type === 'top5') return this.askTop5();
       if (this.s.round.type === 'puzzel') return this.askPuzzel();
       if (this.s.round.type === 'hl') { this.s.round.hl = null; this.s.round.done = 0; return this.askHL(); }
       this.ask(note);
@@ -966,6 +1222,8 @@
           if (SLOTS[n.length]) s.settings.length = n.length;
           if (typeof n.voice === 'boolean') s.settings.voice = n.voice;
           if ([0, 2, 3].includes(n.teams)) { s.settings.teams = n.teams; this.balanceTeams(false); }
+          if (n.theme === '' || THEMES[n.theme]) s.settings.theme = n.theme;
+          if (n.mode === 'quiz' || n.mode === 'bord') s.settings.mode = n.mode;
           if (n.rounds && typeof n.rounds === 'object') {
             ROUND_KEYS.forEach((k) => { if (typeof n.rounds[k] === 'boolean') s.settings.rounds[k] = n.rounds[k]; });
           }
@@ -997,7 +1255,7 @@
           } else s.paused = { at: this.now() };
           return this.changed();
         case 'gm:skip':
-          if (['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'hl', 'lingo', 'puzzel'].includes(st.kind)) this.skipQuestion(false);
+          if (['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'hl', 'lingo', 'puzzel', 'top5'].includes(st.kind)) this.skipQuestion(false);
           return;
         case 'gm:next':
           if (!s.paused && st.kind !== 'lobby' && st.kind !== 'end') this.timeout();
@@ -1041,6 +1299,10 @@
           return this.active();
         case 'tkFake': case 'tkVote':
           return this.active().filter((p) => p.id !== st.artist);
+        case 'lgWrite': case 'top5': case 'roll':
+          return this.active();
+        case 'lgGuess':
+          return this.active().filter((p) => p.id !== st.author);
         case '__never':
           return this.active();
         case 'catpick': {
@@ -1065,6 +1327,11 @@
         case 'tkDraw': return this.tkStart();
         case 'tkFake': return this.tkToVote();
         case 'tkVote': return this.revealTk();
+        case 'lgWrite': return this.lgStart();
+        case 'lgGuess': return this.revealLg();
+        case 'top5': return this.revealTop5();
+        case 'roll': return this.boardMove();
+        case 'board': return this.afterBoard();
         case 'num': return this.toBet();
         case 'bet': return this.revealNum();
         case 'bluffWrite': return this.toBluffVote();
@@ -1079,6 +1346,7 @@
           const r = this.s.round;
           if (st.of === 'wz' && r.wz && r.wz.idx < r.wz.entries.length - 1) { r.wz.idx++; return this.wzGuess(); }
           if (st.of === 'tk' && r.tk && r.tk.idx < r.tk.entries.length - 1) { r.tk.idx++; return this.tkFake(); }
+          if (st.of === 'lg' && r.lg && r.lg.idx < r.lg.entries.length - 1) { r.lg.idx++; return this.lgGuess(); }
           r.done++;
           return this.nextQuestion();
         }
@@ -1312,6 +1580,7 @@
 
     roundScores() {
       const s = this.s;
+      if (s.settings.mode === 'bord') return this.boardTurn();
       // laatste plaats krijgt een power-up (max 3), behalve na de finale
       let bonus = null;
       const isLast = s.roundIdx >= s.plan.length - 1 || s.round.type === 'final';
@@ -1328,7 +1597,8 @@
     }
 
     endGame() {
-      const ps = this.contestants().slice().sort((a, b) => b.score - a.score);
+      const board = this.s.settings.mode === 'bord';
+      const ps = this.contestants().slice().sort((a, b) => (board ? (b.pos || 0) - (a.pos || 0) : 0) || b.score - a.score);
       const awards = [];
       const best = (key, title, emoji, fmt) => {
         const top = this.contestants().slice().sort((a, b) => b.stats[key] - a.stats[key])[0];
@@ -1348,7 +1618,7 @@
 
     // ---------- views ----------
     pub(p) {
-      return { id: p.id, name: p.name, avatar: p.avatar, color: p.color, score: p.score, connected: p.connected, isBot: p.isBot, playing: p.playing, gm: this.s.gm === p.id, powerups: p.powerups.length, team: p.team == null ? null : p.team };
+      return { id: p.id, name: p.name, avatar: p.avatar, color: p.color, score: p.score, connected: p.connected, isBot: p.isBot, playing: p.playing, gm: this.s.gm === p.id, powerups: p.powerups.length, team: p.team == null ? null : p.team, pos: p.pos || 0, skip: p.skip || 0 };
     }
     remaining() {
       const st = this.s.step;
@@ -1370,6 +1640,8 @@
         need: (this.needAnswers() || []).map((p) => p.id),
         powerupsUsed: Object.keys(st.powerups || {}),
         teams: this.teamScores(),
+        theme: THEMES[s.settings.theme] ? Object.assign({ id: s.settings.theme }, THEMES[s.settings.theme]) : null,
+        board: s.settings.mode === 'bord' ? { squares: BOARD, end: BOARD_END } : null,
       };
       const copy = (keys) => keys.forEach((k) => { if (st[k] !== undefined) v[k] = st[k]; });
       copy(['title', 'emoji', 'desc', 'roundNo', 'rounds', 'count', 'qno', 'qcount', 'skippedNote']);
@@ -1395,6 +1667,11 @@
           break;
         }
         case 'tkDraw': break;
+        case 'lgWrite': break;
+        case 'lgGuess': v.statements = st.statements; v.eno = st.eno; v.etotal = st.etotal; v.author = st.author; break;
+        case 'top5': v.hot = st.hot; v.text = st.text; v.items = st.items; v.lo = st.lo; v.hi = st.hi; break;
+        case 'roll': v.bonus = st.bonus; v.dice = st.dice; break;
+        case 'board': v.moves = st.moves; v.positions = st.positions; v.winner = st.winner; break;
         case 'tkFake': v.drawing = st.drawing; v.eno = st.eno; v.etotal = st.etotal; v.artist = st.artist; break;
         case 'tkVote': v.drawing = st.drawing; v.eno = st.eno; v.etotal = st.etotal; v.artist = st.artist; v.options = st.options.map((o) => o.text); break;
         case 'bet': v.guesses = st.guesses; break;
@@ -1426,12 +1703,13 @@
       const isGm = s.gm === id;
       const answered = st.answers ? st.answers[id] !== undefined : false;
       const me = { id: p.id, name: p.name, avatar: p.avatar, color: p.color, score: p.score, powerups: p.powerups, isGm, playing: p.playing, team: p.team == null ? null : p.team };
-      const sorted = this.contestants().slice().sort((a, b) => b.score - a.score);
+      const bord = s.settings.mode === 'bord';
+      const sorted = this.contestants().slice().sort((a, b) => (bord ? (b.pos || 0) - (a.pos || 0) : 0) || b.score - a.score);
       me.rank = sorted.findIndex((x) => x.id === id) + 1;
-      const v = { me, kind: st.kind, stepId: st.id, paused: !!s.paused, deadline: st.deadline, duration: st.duration, remaining: this.remaining(), answered, settings: s.settings };
+      const v = { theme: s.settings.theme, me, kind: st.kind, stepId: st.id, paused: !!s.paused, deadline: st.deadline, duration: st.duration, remaining: this.remaining(), answered, settings: s.settings };
       const teams = this.teamScores();
       if (teams) { v.teams = teams.map((t) => ({ id: t.id, name: t.name, emoji: t.emoji, color: t.color, score: t.score, size: t.size })); }
-      v.gm = isGm ? { canSkip: ['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'hl', 'lingo', 'puzzel'].includes(st.kind), canNext: !['lobby', 'end'].includes(st.kind), players: this.players.map((x) => this.pub(x)) } : null;
+      v.gm = isGm ? { canSkip: ['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'hl', 'lingo', 'puzzel', 'top5'].includes(st.kind), canNext: !['lobby', 'end'].includes(st.kind), players: this.players.map((x) => this.pub(x)) } : null;
       if (st.cat) v.cat = this.catInfo(st.cat);
       const qtext = st.q ? st.q.q : null;
       v.key = st.kind + ':' + st.id + ':' + (answered ? 'a' : 'n') + (p.playing ? '' : ':gm');
@@ -1450,6 +1728,7 @@
           v.lengths = LENGTHS;
           v.roundList = ROUND_KEYS.map((k) => ({ id: k, title: ROUNDS[k].title, emoji: ROUNDS[k].emoji }));
           v.teamList = TEAMS;
+          v.themeList = Object.entries(THEMES).map(([k, t]) => ({ id: k, name: t.name, emoji: t.emoji }));
           break;
         case 'intro':
           v.screen = 'wait';
@@ -1485,6 +1764,40 @@
           v.last = pr.last;
           v.groups = st.puzzle.groups.length;
           v.key += ':' + pr.found.length + ':' + pr.mistakes;
+          break;
+        }
+        case 'lgWrite':
+          v.screen = 'lgwrite';
+          v.myAnswer = st.answers[id];
+          break;
+        case 'lgGuess':
+          if (st.author === id) { v.screen = 'wait'; v.big = '😇'; v.title = 'Jouw uitspraken!'; v.sub = 'Hou je gezicht in de plooi. De rest zoekt je leugen.'; v.key += ':author'; break; }
+          v.screen = 'lgguess';
+          v.statements = st.statements;
+          v.authorName = this.name(st.author);
+          v.myAnswer = st.answers[id];
+          break;
+        case 'top5':
+          v.screen = 'top5';
+          v.isHot = st.hot === id;
+          v.q = st.hot === id ? st.self : st.text;
+          v.sub = st.hot === id ? 'Zet ze eerlijk op volgorde. De rest raadt jouw lijstje.' : `Hoe zet ${this.name(st.hot)} dit op volgorde?`;
+          v.items = st.items; v.lo = st.lo; v.hi = st.hi;
+          v.myAnswer = st.answers[id];
+          break;
+        case 'roll':
+          v.screen = 'roll';
+          v.bonus = st.bonus[id] || 0;
+          v.dice = st.dice[id];
+          v.skipped = st.answers[id] === 'skip';
+          v.pos = p.pos || 0;
+          break;
+        case 'board': {
+          v.screen = 'wait';
+          const m = (st.moves || []).find((x) => x.id === id);
+          v.big = st.winner === id ? '🏆' : '🎲';
+          v.title = `Je staat op vakje ${p.pos || 0}`;
+          v.sub = m && m.events.length ? m.events.join(' · ') : m ? `${m.dice} gegooid${m.bonus ? ' + ' + m.bonus + ' bonus' : ''}` : '';
           break;
         }
         case 'tkDraw':
@@ -1624,7 +1937,7 @@
         v.targets = this.contestants().filter((x) => x.id !== id).map((x) => ({ id: x.id, name: x.name, avatar: x.avatar }));
       }
       v.usedPowerup = st.powerups && st.powerups[id] ? st.powerups[id].type : null;
-      v.skippable = ['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'hl', 'lingo', 'puzzel'].includes(st.kind) && this.skippable();
+      v.skippable = ['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'hl', 'lingo', 'puzzel', 'top5'].includes(st.kind) && this.skippable();
       return v;
     }
     resultLine(id, st) {
@@ -1635,6 +1948,8 @@
         case 'hl': return st.right.includes(id) ? (st.streak[id] > 1 ? `Goed! ${st.streak[id]} op rij 🔥` : 'Goed!') : `Fout: ${st.b.show}`;
         case 'lingo': return st.right.includes(id) ? `Geraden: ${st.word.toUpperCase()}` : `Het woord was ${st.word.toUpperCase()}`;
         case 'puzzel': return `${st.found[id] || 0} van de ${st.puzzle.groups.length} verbanden gevonden`;
+        case 'lg': return st.author === id ? (st.gains[id] ? `Je hield er ${st.gains[id] / 50} voor de gek 😏` : 'Iedereen had je door 😅') : st.right.includes(id) ? 'Leugen gevonden!' : 'Erin getuind…';
+        case 'top5': return st.hot === id ? 'Zo goed kennen ze je' : st.scoresBy[id] !== undefined ? `${st.scoresBy[id]} van de 5 op de goede plek` : 'Geen antwoord';
         case 'tk': return st.artist === id ? 'Zo deed jouw tekening het' : st.votes[id] === st.truth ? 'Je vond de echte titel!' : 'Mis!';
         case 'wz': return st.author === id ? (st.gains[id] ? `Je luisde er ${st.gains[id] / 50} in 😏` : 'Iedereen had je door 😅') : st.right.includes(id) ? 'Goed geraden!' : `Het was ${this.name(st.author)}`;
         case 'num': return `Het antwoord: ${fmtNum(st.q.answer)}${st.q.unit ? ' ' + st.q.unit : ''}`;
@@ -1671,6 +1986,9 @@
   GN.Engine = Engine;
   GN.ROUNDS = ROUNDS;
   GN.TEAMS = TEAMS;
+  GN.THEMES = THEMES;
+  GN.BOARD = BOARD;
+  GN.BOARD_END = BOARD_END;
   GN.POWERUPS = POWERUPS;
   GN.AVATARS = AVATARS;
   GN.LENGTHS = LENGTHS;

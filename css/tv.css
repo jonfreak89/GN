@@ -263,3 +263,30 @@ body.tv { overflow: hidden; }
 .tkby { text-align: center; margin-top: .5em; color: var(--muted); font-size: 1.2em; }
 .tkside .opts.one, .opts.one { grid-template-columns: 1fr; }
 .tkside .opt { font-size: 1.4em; min-height: 2.6em; }
+
+/* ---------- Ganzenbord ---------- */
+.boardwrap { width: 100%; max-width: 96em; display: grid; grid-template-columns: 1fr 22em; gap: 1.6em; align-items: center; }
+.gboard { position: relative; display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(4, 1fr); gap: 0.35em; aspect-ratio: 11 / 4.4; }
+.bcell { background: var(--ink-2); border: 2px solid var(--line); border-radius: 12px; display: grid; place-items: center; position: relative; min-height: 0; }
+.bcell .no { position: absolute; top: 0.2em; left: 0.4em; font-size: 0.85em; color: var(--muted); font-weight: 700; }
+.bcell .ic { font-size: 1.9em; line-height: 1; }
+.bcell .sq { position: absolute; bottom: 0.15em; font-size: 0.7em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.bcell.gans { background: rgba(61, 220, 151, 0.14); border-color: rgba(61, 220, 151, 0.45); }
+.bcell.kans { background: rgba(76, 201, 240, 0.14); border-color: rgba(76, 201, 240, 0.45); }
+.bcell.ster { background: rgba(255, 182, 39, 0.16); border-color: rgba(255, 182, 39, 0.5); }
+.bcell.brug, .bcell.doolhof { background: rgba(155, 123, 255, 0.16); }
+.bcell.herberg, .bcell.put, .bcell.gevangenis { background: rgba(255, 93, 93, 0.12); }
+.bcell.dood { background: rgba(0, 0, 0, 0.45); border-color: var(--bad); }
+.bcell.start, .bcell.finish { background: var(--ink-3); border-color: var(--amber); }
+.bcell.finish .ic { font-size: 2.4em; }
+.pawns { position: absolute; inset: 0; pointer-events: none; }
+.pawn { position: absolute; width: 2.3em; height: 2.3em; margin: -1.15em 0 0 -1.15em; border-radius: 50%; display: grid; place-items: center; font-size: 1.15em; background: var(--c); box-shadow: 0 0.25em 0.6em rgba(0, 0, 0, 0.5), 0 0 0 3px var(--ink); transition: left 1.6s cubic-bezier(0.5, 0, 0.3, 1.2), top 1.6s cubic-bezier(0.5, 0, 0.3, 1.2); z-index: 2; }
+.boardside { display: grid; gap: 0.8em; align-content: center; }
+.rollstat, .moves { display: grid; gap: 0.5em; }
+.rollchip, .move { display: flex; align-items: center; gap: 0.6em; background: var(--ink-2); border: 2px solid var(--line); border-left: 6px solid var(--c); border-radius: 14px; padding: 0.5em 0.8em; font-size: 1.15em; }
+.rollchip.done { border-color: var(--c); }
+.rollchip b { margin-left: auto; font-family: var(--display); color: var(--amber); }
+.rollchip small { color: var(--mint); font-weight: 700; }
+.rollchip .av, .move .av { font-size: 1.4em; }
+.move small { display: block; color: var(--amber); margin-top: 0.2em; font-size: 0.85em; }
+.pchip .bpos { font-size: 0.85em; color: var(--mint); font-weight: 700; }

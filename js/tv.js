@@ -178,10 +178,12 @@
       const html = `<div class="box"><div class="big">⏸️</div><h2>${restored ? 'Spel hersteld' : 'Pauze'}</h2><p>${rec}De spelleider 👑 hervat vanaf zijn telefoon.</p></div>`;
       if (overlay.dataset.html !== html) { overlay.innerHTML = html; overlay.dataset.html = html; }
     } else restored = false;
+    applyTheme(v.theme);
     const key = v.kind + ':' + v.stepId;
     if (key !== shownKey) {
       shownKey = key;
       stage.innerHTML = VIEWS[v.kind] ? VIEWS[v.kind](v) : '';
+      if (v.kind === 'board') animatePawns(v);
       const qr = $('.qr', stage);
       if (qr) drawQr(qr);
       speakFor(v);
@@ -189,6 +191,77 @@
       updateLive(v);
     }
   }
+
+  let themeNow = null;
+  function applyTheme(t) {
+    const id = t ? t.id : '';
+    if (id === themeNow) return;
+    themeNow = id;
+    document.body.classList.remove('theme-nerd', 'theme-retro');
+    if (id) document.body.classList.add('theme-' + id);
+  }
+
+  // ---------- ganzenbord ----------
+  const SQ = { gans: '🪿', kans: '❓', ster: '⭐', brug: '🌉', herberg: '🍺', doolhof: '🌀', put: '🕳️', gevangenis: '🔒', dood: '💀' };
+  const SQNAME = { gans: 'Gans', kans: 'Kans', ster: 'Ster', brug: 'Brug', herberg: 'Herberg', doolhof: 'Doolhof', put: 'Put', gevangenis: 'Cel', dood: 'Dood' };
+  const COLS = 11;
+  // slang: 0 = start links boven, daarna rijen van 10 heen en weer
+  function cellXY(i) {
+    if (i <= 0) return { c: 0, r: 0 };
+    const row = Math.floor((i - 1) / 10);
+    const k = (i - 1) % 10;
+    return { c: row % 2 === 0 ? 1 + k : 10 - k, r: row };
+  }
+  function pawnStyle(pos, idx, n) {
+    const { c, r } = cellXY(pos);
+    const off = n > 1 ? (idx - (n - 1) / 2) * 0.9 : 0;
+    return `left:calc(${((c + 0.5) / COLS) * 100}% + ${off}em);top:calc(${((r + 0.5) / 4) * 100}% + ${n > 1 ? (idx % 2 ? 0.5 : -0.5) : 0}em)`;
+  }
+  function boardHtml(v, posOf) {
+    const b = v.board;
+    if (!b) return '';
+    const cells = [];
+    for (let i = 0; i <= b.end; i++) {
+      const { c, r } = cellXY(i);
+      const t = b.squares[i];
+      const cls = i === 0 ? 'start' : i === b.end ? 'finish' : t || '';
+      const ic = i === 0 ? '🚩' : i === b.end ? '🏁' : SQ[t] || '';
+      cells.push(`<div class="bcell ${cls}" style="grid-column:${c + 1};grid-row:${r + 1}"><span class="no">${i === 0 ? 'Start' : i}</span><span class="ic">${ic}</span>${t && i !== b.end ? `<span class="sq">${SQNAME[t]}</span>` : ''}</div>`);
+    }
+    const ps = v.players.filter((p) => p.playing);
+    const groups = {};
+    ps.forEach((p) => { const k = posOf(p); (groups[k] = groups[k] || []).push(p.id); });
+    const pawns = ps.map((p) => {
+      const k = posOf(p);
+      const g = groups[k];
+      return `<div class="pawn" data-id="${p.id}" style="--c:${p.color};${pawnStyle(k, g.indexOf(p.id), g.length)}">${p.avatar}</div>`;
+    }).join('');
+    return `<div class="gboard">${cells.join('')}<div class="pawns">${pawns}</div></div>`;
+  }
+  function animatePawns(v) {
+    // eerst op de oude plek, dan naar de nieuwe
+    const to = v.positions || {};
+    const ps = v.players.filter((p) => p.playing);
+    const groups = {};
+    ps.forEach((p) => { const k = to[p.id] || 0; (groups[k] = groups[k] || []).push(p.id); });
+    setTimeout(() => {
+      ps.forEach((p) => {
+        const el = stage.querySelector(`.pawn[data-id="${p.id}"]`);
+        if (!el) return;
+        const k = to[p.id] || 0;
+        el.setAttribute('style', `--c:${p.color};${pawnStyle(k, groups[k].indexOf(p.id), groups[k].length)}`);
+      });
+    }, 900);
+  }
+  const rollStat = (v) => {
+    const ps = v.players.filter((p) => p.playing);
+    return ps.map((p) => {
+      const d = v.dice[p.id];
+      const b = v.bonus[p.id];
+      const st = d === 0 ? '⏸️ slaat over' : d ? `🎲 ${d}` : '…';
+      return `<div class="rollchip ${d ? 'done' : ''}" style="--c:${p.color}"><span class="av">${p.avatar}</span><span class="nm">${esc(p.name)}</span><b>${st}</b>${b ? `<small>+${b} bonus</small>` : ''}</div>`;
+    }).join('');
+  };
 
   function speakFor(v) {
     if (v.stepId === lastSpoken) return;
@@ -200,6 +273,11 @@
     else if (v.kind === 'hl') say(`${v.b.n}: ${v.set.hi.toLowerCase()} of ${v.set.lo.toLowerCase()} dan ${v.a.n}?`);
     else if (v.kind === 'reveal' && v.reveal.options && v.reveal.correct !== undefined && v.reveal.of !== 'ken') say('Het juiste antwoord is: ' + v.reveal.options[v.reveal.correct]);
     else if (v.kind === 'reveal' && v.reveal.of === 'num') say('Het antwoord is ' + v.reveal.q.answer);
+    else if (v.kind === 'lgWrite') say('Schrijf twee waarheden en een leugen over jezelf.');
+    else if (v.kind === 'lgGuess') { const a = v.players.find((p) => p.id === v.author); say(`Welke van ${a ? a.name : 'deze'} is gelogen?`); }
+    else if (v.kind === 'top5') say(v.text);
+    else if (v.kind === 'roll') say('Pak je telefoon en gooi de dobbelsteen!');
+    else if (v.kind === 'board' && v.winner) { const w = v.players.find((p) => p.id === v.winner); say(`${w ? w.name : 'Iemand'} is als eerste bij de finish!`); }
   }
 
   function renderTop() {
@@ -223,7 +301,7 @@
       const g = gains[p.id];
       return `<div class="pchip ${done ? 'done' : ''} ${p.connected || p.isBot ? '' : 'off'}" style="--c:${p.color}">
         ${p.gm ? '<span class="crown">👑</span>' : ''}${v.powerupsUsed.includes(p.id) ? '<span class="pu">⚡</span>' : ''}
-        <span class="av">${p.avatar}</span><span class="nm">${esc(p.name)}</span>
+        <span class="av">${p.avatar}</span><span class="nm">${esc(p.name)}</span>${v.board ? `<span class="bpos">🪿${p.pos}</span>` : ''}
         <span class="sc">${p.score}${g ? ` <small style="color:${g > 0 ? 'var(--mint)' : 'var(--bad)'}">${g > 0 ? '+' : ''}${g}</small>` : ''}</span></div>`;
     };
     const html = v.kind === 'end' ? '' : v.teams
@@ -244,6 +322,7 @@
     if (w) w.outerHTML = waitLine(v);
     if (v.kind === 'lingo') { const g = $('#lingogrids', stage); if (g) g.innerHTML = lingoGrids(v.players.filter((p) => p.playing), v.grids); }
     if (v.kind === 'puzzel') { const g = $('#puzprog', stage); if (g) g.innerHTML = puzProg(v); }
+    if (v.kind === 'roll') { const g = $('#rollstat', stage); if (g) g.innerHTML = rollStat(v); }
     if (v.kind === 'lobby') {
       const h = $('#lobbyhint', stage);
       if (h) h.innerHTML = lobbyHint(v);
@@ -257,7 +336,9 @@
   const settingsChips = (v) => {
     const sp = GN.SPICE[v.settings.spice];
     const off = Object.keys(v.settings.rounds || {}).filter((k) => v.settings.rounds[k] === false).map((k) => GN.ROUNDS[k].title);
-    return `<span>${sp.emoji} ${sp.name}</span><span>⏱️ ${esc(v.settings.length)} (${GN.LENGTHS[v.settings.length]})</span>${v.settings.teams ? `<span>👥 ${v.settings.teams} teams</span>` : ''}${v.settings.voice ? '<span>🔊 Voorlezen</span>' : ''}${!v.settings.gmPlays ? '<span>🎙️ Spelleider presenteert</span>' : ''}${off.length ? `<span>🚫 Zonder: ${esc(off.join(', '))}</span>` : ''}`;
+    const th = v.theme ? `<span>${v.theme.emoji} ${esc(v.theme.name)}</span>` : '';
+    const md = v.settings.mode === 'bord' ? '<span>🪿 Ganzenbord</span>' : '';
+    return `${th}${md}<span>${sp.emoji} ${sp.name}</span><span>⏱️ ${esc(v.settings.length)} (${GN.LENGTHS[v.settings.length]})</span>${v.settings.teams ? `<span>👥 ${v.settings.teams} teams</span>` : ''}${v.settings.voice ? '<span>🔊 Voorlezen</span>' : ''}${!v.settings.gmPlays ? '<span>🎙️ Spelleider presenteert</span>' : ''}${off.length ? `<span>🚫 Zonder: ${esc(off.join(', '))}</span>` : ''}`;
   };
   const lobbyHint = (v) => {
     const gm = v.players.find((p) => p.gm);
@@ -270,7 +351,7 @@
       <div class="lobby rise">
         <div>
           <h1 class="logo"><span class="g">Game</span> <span class="n">Night</span> <span class="moon">🌙</span></h1>
-          <div class="tag">De quizavond in je eigen woonkamer</div>
+          <div class="tag">${v.theme ? `${v.theme.emoji} ${esc(v.theme.name)}` : 'De quizavond in je eigen woonkamer'}</div>
           <div class="steps">
             <div><i>1</i> Scan de QR-code of ga naar de link</div>
             <div><i>2</i> Kies je naam en avatar</div>
@@ -439,6 +520,57 @@
       <p class="rise">Hoeveel van je punten durf je in te zetten? Goed = erbij, fout = eraf.</p>
       ${waitLine(v)}</div>`,
 
+    lgWrite: (v) => `<div class="intro center">
+      <div class="big">🤥</div>
+      <h2 class="pop">Twee waarheden en een leugen</h2>
+      <p class="rise">Schrijf op je telefoon drie dingen over jezelf. Twee zijn waar, één is gelogen. Hoe geloofwaardiger, hoe beter!</p>
+      ${waitLine(v)}</div>`,
+
+    lgGuess: (v) => {
+      const a = pmap(v)[v.author];
+      return `<div class="panel">
+      <div class="hotseat"><span class="av" style="--c:${a ? a.color : '#444'}">${a ? a.avatar : '?'}</span><span><b>${a ? esc(a.name) : ''}</b> beweert… <small style="color:var(--muted)">(${v.eno} van ${v.etotal})</small></span></div>
+      <div class="qtext pop" style="font-size:2.4em">Welke is de leugen? 🤥</div>
+      <div class="opts one">${v.statements.map((t, i) => `<div class="opt rise" style="animation-delay:${0.2 + i * 0.15}s"><span class="l">${LETTERS[i]}</span>${esc(t)}</div>`).join('')}</div>
+      ${waitLine(v)}</div>`;
+    },
+
+    top5: (v) => {
+      const hot = pmap(v)[v.hot];
+      return `<div class="panel">
+      <div class="hotseat"><span class="av" style="--c:${hot ? hot.color : '#444'}">${hot ? hot.avatar : '?'}</span><span><b>${hot ? esc(hot.name) : ''}</b> in de hete stoel 🔥</span></div>
+      <div class="${qClass(v.text)} pop">${esc(v.text)}</div>
+      <div class="endlabels"><span>1️⃣ ${esc(v.lo)}</span><span>${esc(v.hi)} 5️⃣</span></div>
+      <div class="orderlist">${v.items.map((t, i) => `<div class="orow" style="animation-delay:${i * 0.1}s"><span class="num">•</span>${esc(t)}</div>`).join('')}</div>
+      <div class="qsub">${hot ? esc(hot.name) : ''} zet ze eerlijk op volgorde, de rest raadt hoe.</div>
+      ${waitLine(v)}</div>`;
+    },
+
+    roll: (v) => `<div class="boardwrap">
+      ${boardHtml(v, (p) => p.pos)}
+      <div class="boardside">
+        <div class="qhead" style="justify-content:flex-start"><span class="cat">🎲 Gooien!</span></div>
+        <div class="qsub" style="text-align:left">Tik op je telefoon op de dobbelsteen. De beste drie van de ronde krijgen bonusstappen.</div>
+        <div class="rollstat" id="rollstat">${rollStat(v)}</div>
+      </div></div>`,
+
+    board: (v) => {
+      const m = pmap(v);
+      const from = {};
+      (v.moves || []).forEach((x) => (from[x.id] = x.from));
+      const w = v.winner ? m[v.winner] : null;
+      return `<div class="boardwrap">
+      ${boardHtml(v, (p) => (from[p.id] !== undefined ? from[p.id] : p.pos))}
+      <div class="boardside">
+        ${w ? `<div class="bonus pop" style="font-size:1.6em">🏆 ${w.avatar} <b>${esc(w.name)}</b> is bij de finish!</div>` : ''}
+        <div class="moves">${(v.moves || []).map((x, i) => {
+          const p = m[x.id];
+          if (!p) return '';
+          return `<div class="move rise" style="--c:${p.color};animation-delay:${0.2 + i * 0.15}s"><span class="av">${p.avatar}</span><div><b>${esc(p.name)}</b> ${x.dice ? `🎲 ${x.dice}${x.bonus ? ` + ${x.bonus}` : ''}` : ''} → vakje <b>${x.to}</b>${x.events.length ? `<small>${x.events.map(esc).join('<br>')}</small>` : ''}</div></div>`;
+        }).join('')}</div>
+      </div></div>`;
+    },
+
     reveal: (v) => REVEALS[v.reveal.of](v, v.reveal),
 
     scores: (v) => {
@@ -456,7 +588,7 @@
     end: (v) => {
       const m = pmap(v);
       const r = v.ranking.map((id) => m[id]).filter(Boolean);
-      const pod = [r[1], r[0], r[2]].map((p, i) => (p ? `<div class="pl p${[2, 1, 3][i]}" style="--c:${p.color}"><div class="av">${p.avatar}</div><div class="nm">${esc(p.name)}</div><div class="block">${p.score}</div></div>` : '')).join('');
+      const pod = [r[1], r[0], r[2]].map((p, i) => (p ? `<div class="pl p${[2, 1, 3][i]}" style="--c:${p.color}"><div class="av">${p.avatar}</div><div class="nm">${esc(p.name)}</div><div class="block">${v.board ? (p.pos >= v.board.end ? '🏁' : 'vakje ' + p.pos) : p.score}</div></div>` : '')).join('');
       return `<div class="panel center">
         ${(() => {
           const tw = v.teamRanking && v.teams ? v.teams.find((t) => t.id === v.teamRanking[0]) : null;
@@ -490,6 +622,27 @@
   const PUZC = ['#3ddc97', '#4cc9f0', '#ffb627'];
 
   const REVEALS = {
+    lg: (v, r) => {
+      const m = pmap(v);
+      const a = m[r.author];
+      const by = (i) => Object.keys(r.votes || {}).filter((id) => r.votes[id] === i);
+      const fooled = Object.keys(r.votes || {}).filter((id) => r.votes[id] !== r.lie).length;
+      return `<div class="panel">
+        <div class="hotseat"><span class="av" style="--c:${a ? a.color : '#444'}">${a ? a.avatar : '?'}</span><span><b>${a ? esc(a.name) : ''}</b> loog over…</span></div>
+        <div class="opts one">${r.statements.map((t, i) => `<div class="opt ${i === r.lie ? 'right' : 'wrong'}"><span class="l">${LETTERS[i]}</span>${i === r.lie ? '🤥 ' : '✅ '}${esc(t)}${voters(by(i), m)}</div>`).join('')}</div>
+        <div class="bonus">${fooled ? `😈 ${a ? esc(a.name) : ''} luisde er ${fooled} in!` : '🕵️ Iedereen prikte er doorheen!'}</div></div>`;
+    },
+    top5: (v, r) => {
+      const m = pmap(v);
+      const hot = m[r.hot];
+      if (!r.hotAns) return `<div class="panel center"><div class="intro"><div class="big">🤷</div><h2 style="font-size:3em">${hot ? esc(hot.name) : ''} vulde niks in…</h2></div></div>`;
+      const sc = Object.entries(r.scoresBy || {}).sort((x, y) => y[1] - x[1]);
+      return `<div class="panel">
+        <div class="hotseat"><span class="av" style="--c:${hot ? hot.color : '#444'}">${hot ? hot.avatar : '?'}</span><span>Het lijstje van <b>${hot ? esc(hot.name) : ''}</b></span></div>
+        <div class="${qClass(r.text)}" style="font-size:2.2em">${esc(r.text)}</div>
+        <div class="orderlist">${r.hotAns.map((ix, i) => `<div class="orow" style="animation-delay:${i * 0.25}s"><span class="num">${i + 1}</span>${esc(r.items[ix])}${i === 0 ? `<small style="margin-left:auto;color:var(--muted)">${esc(r.lo)}</small>` : i === 4 ? `<small style="margin-left:auto;color:var(--muted)">${esc(r.hi)}</small>` : ''}</div>`).join('')}</div>
+        <div class="events">${sc.map(([id, n]) => (m[id] ? `<span>${m[id].avatar} ${esc(m[id].name)}: ${n}/5${n === 5 ? ' 🎯' : ''}</span>` : '')).join('')}</div></div>`;
+    },
     hl: (v, r) => {
       const m = pmap(v);
       const by = (i) => Object.keys(r.picks || {}).filter((id) => r.picks[id] === i);

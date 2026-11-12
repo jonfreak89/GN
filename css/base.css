@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Rubik:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Rubik:wght@400;500;700&family=Orbitron:wght@700;900&family=Bungee&display=swap');
 
 :root {
   --ink: #0d0b1f;
@@ -60,3 +60,46 @@ button { font: inherit; color: inherit; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ---------- thema's ---------- */
+body.theme-nerd {
+  --ink: #050d14;
+  --ink-2: #0b1a26;
+  --ink-3: #12304a;
+  --line: rgba(0, 255, 200, 0.18);
+  --text: #e6fff8;
+  --muted: #8fc7c0;
+  --pink: #ff3df2;
+  --amber: #39ff14;
+  --mint: #00ffc8;
+  --sky: #00b3ff;
+  --violet: #8a5cff;
+  --display: 'Orbitron', 'Rubik', system-ui, sans-serif;
+  background-image:
+    linear-gradient(rgba(0, 255, 200, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 200, 0.05) 1px, transparent 1px),
+    radial-gradient(60% 50% at 50% -10%, rgba(0, 179, 255, 0.35), transparent 70%),
+    radial-gradient(40% 40% at 100% 100%, rgba(255, 61, 242, 0.16), transparent 70%);
+  background-size: 40px 40px, 40px 40px, auto, auto;
+}
+body.theme-nerd .logo .g, body.theme-nerd .logo .n { letter-spacing: 0.04em; }
+body.theme-retro {
+  --ink: #170530;
+  --ink-2: #261047;
+  --ink-3: #3a1a66;
+  --line: rgba(255, 42, 109, 0.25);
+  --text: #fff4fb;
+  --muted: #d1b3e6;
+  --pink: #ff2a6d;
+  --amber: #f9c80e;
+  --mint: #05ffa1;
+  --sky: #05d9e8;
+  --violet: #b967ff;
+  --display: 'Bungee', 'Rubik', system-ui, sans-serif;
+  background-image:
+    linear-gradient(transparent 62%, rgba(255, 42, 109, 0.22) 62.2%, transparent 63%),
+    repeating-linear-gradient(90deg, rgba(5, 217, 232, 0.07) 0 2px, transparent 2px 80px),
+    radial-gradient(50% 40% at 50% 62%, rgba(249, 200, 14, 0.25), transparent 70%),
+    radial-gradient(70% 60% at 50% 0%, rgba(185, 103, 255, 0.4), transparent 70%);
+}
+body.theme-retro .qtext, body.theme-retro h2 { text-shadow: 0.06em 0.06em 0 rgba(255, 42, 109, 0.55); }
