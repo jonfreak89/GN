@@ -88,5 +88,25 @@
     return Math.max(c ? c.spice : 1, q.spice || 1);
   };
 
+  // Teken & Raad: kleuren en lijndiktes (in een 1000x1000 vlak)
+  GN.PALETTE = ['#1d1a2f', '#ff4f8b', '#4cc9f0', '#ffb627', '#3ddc97', '#9b7bff', '#8b5a2b', '#ffffff'];
+  GN.WIDTHS = [7, 16, 34];
+  GN.drawingSvg = function (d, cls) {
+    const lines = (d || []).map((st) => {
+      const pts = [];
+      for (let i = 0; i + 1 < st.p.length; i += 2) pts.push(st.p[i] + ',' + st.p[i + 1]);
+      if (pts.length === 1) pts.push(pts[0]);
+      return '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + (GN.PALETTE[st.c] || '#000') + '" stroke-width="' + (GN.WIDTHS[st.w] || 16) + '" stroke-linecap="round" stroke-linejoin="round"/>';
+    }).join('');
+    return '<svg class="' + (cls || 'drawing') + '" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg"><rect width="1000" height="1000" rx="40" fill="#fffaf0"/>' + lines + '</svg>';
+  };
+
+  // getallen netjes in het Nederlands (jaartallen zonder punt)
+  GN.fmtNum = function (n) {
+    if (typeof n !== 'number') return n;
+    if (Number.isInteger(n) && Math.abs(n) < 10000) return String(n);
+    return n.toLocaleString('nl-NL');
+  };
+
   if (typeof module !== 'undefined') module.exports = GN;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -222,3 +222,44 @@ body.tv { overflow: hidden; }
 .podium.small .p2 .block { height: 1.8em; }
 .podium.small .p3 .block { height: 1.3em; }
 .podium.small .block { font-size: 1.8em; }
+
+/* hoger of lager */
+.hlrow { display: flex; align-items: center; justify-content: center; gap: 1.5em; margin: .6em 0 1.2em; }
+.hlcard { background: var(--ink-2); border: 2px solid var(--line); border-radius: 26px; padding: 1.4em 2em; min-width: 16em; }
+.hlcard .n { font-family: var(--display); font-weight: 800; font-size: 2.2em; line-height: 1.1; }
+.hlcard .v { font-family: var(--display); font-weight: 800; font-size: 2.6em; color: var(--amber); margin-top: .3em; }
+.hlcard.q .v { color: var(--pink); }
+.hlcard.win { border-color: var(--mint); background: rgba(61, 220, 151, .14); }
+.hlcard.win .v { color: var(--mint); }
+.hlvs { font-family: var(--display); font-weight: 800; font-size: 2.4em; color: var(--muted); }
+.hlbtns { display: flex; gap: 1.2em; justify-content: center; }
+.hlbtns > span { display: flex; align-items: center; gap: .5em; background: var(--ink-2); border: 2px solid var(--line); border-radius: 18px; padding: .6em 1.4em; font-size: 1.6em; font-weight: 700; transition: all .3s; }
+.hlbtns > span.right { border-color: var(--mint); background: rgba(61, 220, 151, .16); }
+.hlbtns > span.wrong { opacity: .35; }
+.hlbtns .who { font-size: .7em; }
+/* lingo */
+.lingoword { display: flex; gap: .4em; justify-content: center; margin: .2em 0 1.2em; }
+.lingoword span { width: 2.6em; height: 2.6em; display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 2.2em; background: var(--ink-2); border: 2px solid var(--line); border-radius: 14px; }
+.lingoword span.g { background: var(--mint); color: var(--ink); border-color: var(--mint); }
+.lingogrids { display: flex; gap: 1.6em; justify-content: center; flex-wrap: wrap; }
+.lgp { text-align: center; }
+.lgcells { display: grid; gap: .25em; background: var(--ink-2); padding: .5em; border-radius: 12px; border: 2px solid var(--c); }
+.lgrow { display: flex; gap: .25em; }
+.lgrow i { width: 1.3em; height: 1.3em; border-radius: 4px; border: 1px solid var(--line); }
+.lgn { margin-top: .4em; font-weight: 700; }
+/* puzzel */
+.puzgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .7em; max-width: 60em; margin: 0 auto 1em; }
+.puzw { background: var(--ink-2); border: 2px solid var(--line); border-radius: 16px; padding: .8em .4em; font-family: var(--display); font-weight: 800; font-size: 1.6em; }
+.puzprog { display: flex; gap: 1em; flex-wrap: wrap; justify-content: center; font-size: 1.2em; margin-top: .6em; }
+.puzprog span { background: var(--ink-2); border-radius: 99px; padding: .3em .9em; border: 1px solid var(--line); }
+.puzsol { display: grid; gap: .8em; max-width: 56em; margin: 0 auto 1em; }
+.puzrow { border: 3px solid var(--g); background: color-mix(in srgb, var(--g) 14%, transparent); border-radius: 18px; padding: .7em 1.2em; display: grid; gap: .2em; }
+.puzrow b { font-family: var(--display); font-size: 1.8em; color: var(--g); }
+.puzrow span { font-size: 1.5em; }
+/* teken & raad */
+.tkwrap { display: grid; grid-template-columns: auto 1fr; gap: 2em; align-items: center; width: 100%; max-width: 76em; }
+.tkdraw { position: relative; }
+.drawing { width: min(32em, 58vh); height: min(32em, 58vh); display: block; border-radius: 22px; box-shadow: 0 1em 3em rgba(0, 0, 0, .45); }
+.tkby { text-align: center; margin-top: .5em; color: var(--muted); font-size: 1.2em; }
+.tkside .opts.one, .opts.one { grid-template-columns: 1fr; }
+.tkside .opt { font-size: 1.4em; min-height: 2.6em; }

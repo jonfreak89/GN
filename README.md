@@ -26,11 +26,15 @@ Na een minuutje staat het op `https://jonfreak89.github.io/GN/`.
 | Op volgorde | Vier dingen in de juiste volgorde zetten |
 | Hoe goed ken je elkaar? | Hete stoel, "Wie van ons…" en anonieme gênante enquêtes |
 | Wie zei dit? | Iedereen schrijft anoniem een antwoord, daarna raad je wie wat schreef |
+| Hoger of lager | Is het volgende getal hoger of lager? Hoe langer je goed zit, hoe meer punten |
+| Lingo | Raad het woord van vijf letters op je eigen telefoon, met toetsenbord |
+| De Puzzel | Twaalf woorden, drie verbanden van vier (zoals in De Slimste Mens) |
+| Teken & Raad | Teken je geheime opdracht, verzin nep-titels, zoek de echte |
 | Finale | Zet in wat je durft op één laatste vraag |
 
 Extra's: de laatste plaats kiest de categorie, power-ups (Dubbel, 50/50, Stelen, Sabotage, Schild), troost-power-up voor de laatste na elke ronde, awards aan het eind, anonieme overslaan-knop bij 18+ vragen.
 
-**Teams:** ieder voor zich, 2 of 3 teams (Patat, Tulp, Kaas). Spelers kiezen hun team op hun telefoon of de spelleider husselt. Kleinere teams krijgen een eerlijke bonus. De spelleider kan ook per ronde kiezen of die meedoet.
+**Teams:** ieder voor zich, 2 of 3 teams (Patat, Tulp, Kaas). Spelers kiezen hun team op hun telefoon of de spelleider husselt. Kleinere teams krijgen een eerlijke bonus. De spelleider kan ook per ronde kiezen of die meedoet. Kort = 6 rondes, normaal = 8, lang = 11; staan er meer rondes aan, dan kiest het spel er willekeurig een mix uit.
 
 **Spice levels:** 😇 Braaf (kennis en rare weetjes) · 😈 Pittig (+ donkere humor) · 🌶️ Stout (+ 18+).
 

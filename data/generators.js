@@ -151,6 +151,9 @@
     if (!s) return null;
     return { id: idOf('g:film', s, (f) => f.key), type: 'order', q: 'Zet deze films op jaar van verschijnen', lo: 'Oudst', hi: 'Nieuwst', items: s.map((f) => [f.t, f.y, String(f.y)]) };
   });
+  // tabellen ook beschikbaar maken voor Hoger of lager
+  GN.DATA = { countries: C, history: H, animals: A, films: F, fmtPop, kgShow };
+
   // ---------- Waar of nep: afgeleid van bluf-vragen ----------
   // Een stelling met het echte antwoord (waar) of een nep-antwoord (nep).
   // Deelt het "gezien"-geheugen met de bluf-vraag, zodat die niet verklapt wordt.

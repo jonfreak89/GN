@@ -3,7 +3,7 @@
 (function (root) {
   const GN = (root.GN = root.GN || (typeof require !== 'undefined' ? require('./content.js') : {}));
 
-  const TIME = { catpick: 15, mc: 30, tf: 15, num: 40, bet: 25, bluffWrite: 60, bluffVote: 30, order: 45, ken: 35, wie: 30, poll: 40, wzWrite: 60, wzGuess: 20, wager: 30, final: 35 };
+  const TIME = { catpick: 15, mc: 30, tf: 15, num: 40, bet: 25, bluffWrite: 60, bluffVote: 30, order: 45, ken: 35, wie: 30, poll: 40, wzWrite: 60, wzGuess: 20, hl: 15, lingo: 120, puzzel: 120, tkDraw: 90, tkFake: 40, tkVote: 25, wager: 30, final: 35 };
   const SHOW = { intro: 6, reveal: 9, revealShort: 6, revealLong: 12, scores: 9 };
 
   const ROUNDS = {
@@ -13,17 +13,23 @@
     order: { title: 'Op volgorde', emoji: '🔢', desc: 'Zet de vier dingen in de juiste volgorde.', pick: 1 },
     tf: { title: 'Waar of nep?', emoji: '🕵️', desc: 'Klopt deze stelling, of is het onzin? Snel kiezen: waar of nep.', pick: 3 },
     persoonlijk: { title: 'Hoe goed ken je elkaar?', emoji: '🫣', desc: 'Geen goede antwoorden, alleen jullie.', pick: 0 },
+    hl: { title: 'Hoger of lager', emoji: '↕️', desc: 'Is het volgende getal hoger of lager? Hoe langer je goed zit, hoe meer punten.', pick: 0 },
+    lingo: { title: 'Lingo', emoji: '🟩', desc: 'Raad het woord van vijf letters. De eerste letter krijg je cadeau. Hoe minder pogingen, hoe meer punten.', pick: 0 },
+    puzzel: { title: 'De Puzzel', emoji: '🧩', desc: 'Twaalf woorden, drie verbanden. Vind de groepjes van vier, maar je mag maar drie keer fout zitten.', pick: 0 },
+    teken: { title: 'Teken & Raad', emoji: '🎨', desc: 'Teken je geheime opdracht. Daarna verzint iedereen een nep-titel en zoek je de echte.', pick: 0 },
     wiezei: { title: 'Wie zei dit?', emoji: '🗯️', desc: 'Iedereen schrijft anoniem een antwoord. Daarna raad je wie wat schreef.', pick: 0 },
     final: { title: 'De Finale', emoji: '💰', desc: 'Zet zoveel punten in als je durft op één laatste vraag.', pick: 0 },
   };
 
-  const PLANS = {
-    kort: [['mc', 3], ['tf', 4], ['num', 2], ['bluff', 2], ['order', 2], ['persoonlijk', 3], ['wiezei', 1], ['final', 1]],
-    normaal: [['mc', 5], ['tf', 5], ['num', 3], ['bluff', 3], ['order', 3], ['persoonlijk', 4], ['wiezei', 1], ['mc', 4], ['final', 1]],
-    lang: [['mc', 6], ['tf', 6], ['num', 3], ['bluff', 3], ['order', 3], ['persoonlijk', 5], ['wiezei', 2], ['mc', 5], ['tf', 4], ['num', 2], ['bluff', 2], ['final', 1]],
+  // aantal vragen per ronde, voor kort / normaal / lang
+  const COUNTS = {
+    mc: [3, 5, 6], tf: [4, 5, 6], hl: [5, 6, 7], num: [2, 3, 3], lingo: [2, 2, 3], bluff: [2, 3, 3], order: [2, 3, 3],
+    puzzel: [1, 1, 2], teken: [1, 1, 1], persoonlijk: [3, 4, 5], wiezei: [1, 1, 2],
   };
-  const LENGTHS = { kort: '± 20 min', normaal: '± 30 min', lang: '± 45 min' };
-  const ROUND_KEYS = ['mc', 'tf', 'num', 'bluff', 'order', 'persoonlijk', 'wiezei'];
+  const ORDER = ['mc', 'tf', 'hl', 'num', 'lingo', 'bluff', 'order', 'puzzel', 'teken', 'persoonlijk', 'wiezei'];
+  const SLOTS = { kort: 6, normaal: 8, lang: 11 };
+  const LENGTHS = { kort: '6 rondes, ± 25 min', normaal: '8 rondes, ± 35 min', lang: '11 rondes, ± 50 min' };
+  const ROUND_KEYS = ORDER.slice();
   const TEAMS = [
     { name: 'Team Patat', emoji: '🍟', color: '#ffb627' },
     { name: 'Team Tulp', emoji: '🌷', color: '#ff4f8b' },
@@ -65,7 +71,7 @@
         players: {},
         order: [],
         gm: null,
-        settings: { spice: 2, length: 'normaal', gmPlays: true, voice: false, teams: 0, rounds: { mc: true, tf: true, num: true, bluff: true, order: true, persoonlijk: true, wiezei: true } },
+        settings: { spice: 2, length: 'normaal', gmPlays: true, voice: false, teams: 0, rounds: {} },
         step: { kind: 'lobby', id: 0 },
         paused: null,
         plan: [],
@@ -278,13 +284,34 @@
         p.stats = this.blankStats();
         p.powerups = [this.pick(PU_KEYS)];
       });
-      const on = s.settings.rounds || {};
-      let plan = PLANS[s.settings.length].filter(([type]) => type === 'final' || on[type] !== false);
-      if (plan.length === 1) plan = [['mc', 5], ['final', 1]];
-      s.plan = plan.map(([type, count]) => ({ type, count }));
+      s.plan = this.buildPlan().map(([type, count]) => ({ type, count }));
       if (this.teamCount()) this.players.forEach((p) => { if (p.playing && (p.team == null || p.team >= this.teamCount())) p.team = this.smallestTeam(p.id); });
       s.roundIdx = -1;
       this.nextRound();
+    }
+    buildPlan() {
+      const s = this.s;
+      const on = s.settings.rounds || {};
+      const L = { kort: 0, normaal: 1, lang: 2 }[s.settings.length] || 0;
+      const slots = SLOTS[s.settings.length] || 6;
+      let types = ORDER.filter((t) => on[t] !== false);
+      if (!types.length) types = ['mc'];
+      // te veel rondes aan? Dan willekeurig een paar laten vallen (meerkeuze blijft)
+      while (types.length > slots) {
+        const drop = types.filter((t) => t !== 'mc');
+        types.splice(types.indexOf(this.pick(drop)), 1);
+      }
+      const plan = types.map((t) => [t, COUNTS[t][L]]);
+      // plek over? Extra snelle rondes ertussen
+      const extra = ['mc', 'tf', 'hl', 'num'].filter((t) => types.includes(t));
+      // (elk type hooguit twee keer, anders wordt het eentonig)
+      for (let k = 0; plan.length < slots && extra.length && k < 12; k++) {
+        const t = extra[k % extra.length];
+        if (plan.filter((x) => x[0] === t).length >= 2) continue;
+        plan.splice(Math.ceil(plan.length * 0.6), 0, [t, Math.max(2, COUNTS[t][L] - 1)]);
+      }
+      plan.push(['final', 1]);
+      return plan;
     }
     nextRound() {
       const s = this.s;
@@ -293,6 +320,7 @@
       if (!r) return this.endGame();
       if (r.type === 'persoonlijk' && this.contestants().length < 2) return this.nextRound();
       if (r.type === 'wiezei' && this.contestants().length < 3) return this.nextRound();
+      if (r.type === 'teken' && this.contestants().length < 3) return this.nextRound();
       s.round = { type: r.type, count: r.count, done: 0, cat: null, usedCats: [] };
       const R = ROUNDS[r.type];
       this.newStep('intro', { round: r.type, title: R.title, emoji: R.emoji, desc: R.desc, roundNo: s.roundIdx + 1, rounds: s.plan.length, count: r.count }, SHOW.intro);
@@ -305,6 +333,10 @@
       if (r.type === 'final') return this.startFinal();
       if (r.type === 'persoonlijk') return this.askPersonal();
       if (r.type === 'wiezei') return this.askWz();
+      if (r.type === 'hl') return this.askHL();
+      if (r.type === 'lingo') return this.askLingo();
+      if (r.type === 'puzzel') return this.askPuzzel();
+      if (r.type === 'teken') return this.askTeken();
       if (R.pick && r.done % R.pick === 0) return this.catPick();
       this.ask();
     }
@@ -429,6 +461,244 @@
       this.reveal({ of: 'wz', text: st.text, entry: st.entry, author: st.author, votes: st.answers, right, gains, events: [], eno: st.eno, etotal: st.etotal, qno: st.qno, qcount: st.qcount }, SHOW.revealShort);
     }
 
+    // ---------- Hoger of lager ----------
+    askHL() {
+      const r = this.s.round;
+      if (!r.hl) {
+        const sets = (GN.HL_SETS || []).filter((x) => x.items.length >= r.count + 1);
+        if (!sets.length) { r.done = r.count; return this.roundScores(); }
+        const used = this.s.hlUsed || (this.s.hlUsed = []);
+        const fresh = sets.filter((x) => !used.includes(x.id));
+        const set = this.pick(fresh.length ? fresh : sets);
+        used.push(set.id);
+        const pool = this.shuffle(set.items);
+        const chain = [];
+        const okStep = (a, b) => a.v !== b.v && Math.abs(a.v - b.v) / Math.max(Math.abs(a.v), Math.abs(b.v), 1e-9) >= (set.gap || 0.08);
+        for (const it of pool) {
+          if (chain.length > r.count) break;
+          if (!chain.length || okStep(chain[chain.length - 1], it)) chain.push(it);
+        }
+        if (chain.length < 2) { r.done = r.count; return this.roundScores(); }
+        r.count = Math.min(r.count, chain.length - 1);
+        r.hl = { set: { id: set.id, title: set.title, hi: set.hi, lo: set.lo, emoji: set.emoji || '↕️' }, chain, streak: {} };
+      }
+      const a = r.hl.chain[r.done];
+      const b = r.hl.chain[r.done + 1];
+      this.newStep('hl', { set: r.hl.set, a, b: { n: b.n }, bFull: b, correct: b.v > a.v ? 0 : 1, qno: r.done + 1, qcount: r.count }, TIME.hl);
+    }
+    revealHL() {
+      const st = this.s.step;
+      const r = this.s.round;
+      const gains = {};
+      const right = [];
+      this.contestants().forEach((p) => {
+        const ok = st.answers[p.id] === st.correct;
+        r.hl.streak[p.id] = ok ? (r.hl.streak[p.id] || 0) + 1 : 0;
+        if (ok) {
+          right.push(p.id);
+          gains[p.id] = Math.min(150, 50 + 25 * (r.hl.streak[p.id] - 1));
+          p.stats.correct++;
+        }
+      });
+      Object.entries(gains).forEach(([pid, g]) => { const p = this.s.players[pid]; if (p) p.score += g; });
+      this.reveal({ of: 'hl', set: st.set, a: st.a, b: st.bFull, correct: st.correct, picks: st.answers, right, gains, streak: Object.assign({}, r.hl.streak), events: [], qno: st.qno, qcount: st.qcount }, SHOW.revealShort);
+    }
+
+    // ---------- Lingo ----------
+    askLingo() {
+      const words = (GN.LINGO || []).filter((w) => /^[a-z]{5}$/.test(w));
+      if (!words.length) { this.s.round.done = this.s.round.count; return this.roundScores(); }
+      const fresh = words.filter((w) => !this.seen['lingo:' + w]);
+      const word = this.pick(fresh.length ? fresh : words);
+      this.markSeen('lingo:' + word);
+      const r = this.s.round;
+      this.newStep('lingo', { word, first: word[0], prog: {}, qno: r.done + 1, qcount: r.count }, TIME.lingo);
+    }
+    lingoMarks(guess, word) {
+      const m = Array(5).fill('-');
+      const left = {};
+      for (let i = 0; i < 5; i++) {
+        if (guess[i] === word[i]) m[i] = 'g';
+        else left[word[i]] = (left[word[i]] || 0) + 1;
+      }
+      for (let i = 0; i < 5; i++) {
+        if (m[i] !== 'g' && left[guess[i]]) { m[i] = 'y'; left[guess[i]]--; }
+      }
+      return m.join('');
+    }
+    lingoGuess(p, w) {
+      const st = this.s.step;
+      const prog = st.prog[p.id] || (st.prog[p.id] = { g: [], solved: false });
+      if (st.answers[p.id] !== undefined) return;
+      w = String(w || '').toLowerCase().replace(/[^a-z]/g, '');
+      if (w.length !== 5 || w[0] !== st.first) return;
+      prog.g.push({ w, m: this.lingoMarks(w, st.word) });
+      if (w === st.word) prog.solved = true;
+      if (prog.solved || prog.g.length >= 5) st.answers[p.id] = true;
+      this.changed();
+      this.checkAllIn();
+    }
+    revealLingo() {
+      const st = this.s.step;
+      const gains = {};
+      const right = [];
+      const pts = [150, 120, 90, 60, 40];
+      this.contestants().forEach((p) => {
+        const pr = st.prog[p.id];
+        if (pr && pr.solved) {
+          gains[p.id] = pts[pr.g.length - 1] || 40;
+          right.push(p.id);
+          p.stats.correct++;
+        }
+      });
+      Object.entries(gains).forEach(([pid, g]) => { const p = this.s.players[pid]; if (p) p.score += g; });
+      const grids = {};
+      Object.entries(st.prog).forEach(([pid, pr]) => (grids[pid] = pr.g.map((x) => x.m)));
+      this.reveal({ of: 'lingo', word: st.word, grids, right, gains, events: [], qno: st.qno, qcount: st.qcount }, SHOW.reveal);
+    }
+
+    // ---------- De Puzzel ----------
+    askPuzzel() {
+      const all = GN.PUZZELS || [];
+      const r = this.s.round;
+      if (!all.length) { r.done = r.count; return this.roundScores(); }
+      const fresh = all.filter((x) => !this.seen['puz:' + x.id]);
+      const pz = this.pick(fresh.length ? fresh : all);
+      this.markSeen('puz:' + pz.id);
+      const words = this.shuffle(pz.groups.flatMap((g, gi) => g.words.map((w) => ({ w, g: gi }))));
+      this.newStep('puzzel', { puzzle: { id: pz.id, groups: pz.groups.map((g) => ({ name: g.name, words: g.words })) }, words, prog: {}, qno: r.done + 1, qcount: r.count }, TIME.puzzel);
+    }
+    puzzelGroup(p, idx) {
+      const st = this.s.step;
+      if (st.answers[p.id] !== undefined) return;
+      if (!Array.isArray(idx) || idx.length !== 4 || new Set(idx).size !== 4 || idx.some((i) => !(i >= 0 && i < st.words.length))) return;
+      const pr = st.prog[p.id] || (st.prog[p.id] = { found: [], mistakes: 0, last: null });
+      const gs = idx.map((i) => st.words[i].g);
+      const g = gs[0];
+      if (gs.every((x) => x === g) && !pr.found.includes(g)) {
+        pr.found.push(g);
+        pr.last = 'ok';
+      } else {
+        pr.mistakes++;
+        // drie van de vier goed? Dan zeggen we dat, net als op tv
+        const counts = {};
+        gs.forEach((x) => (counts[x] = (counts[x] || 0) + 1));
+        pr.last = Object.values(counts).some((c) => c === 3) ? 'bijna' : 'fout';
+      }
+      if (pr.found.length === st.puzzle.groups.length || pr.mistakes >= 3) st.answers[p.id] = true;
+      this.changed();
+      this.checkAllIn();
+    }
+    revealPuzzel() {
+      const st = this.s.step;
+      const gains = {};
+      const found = {};
+      this.contestants().forEach((p) => {
+        const pr = st.prog[p.id];
+        const n = pr ? pr.found.length : 0;
+        found[p.id] = n;
+        if (n) gains[p.id] = 50 * n + (n === st.puzzle.groups.length ? 50 : 0);
+        if (n === st.puzzle.groups.length) p.stats.correct++;
+      });
+      Object.entries(gains).forEach(([pid, g]) => { const p = this.s.players[pid]; if (p) p.score += g; });
+      this.reveal({ of: 'puzzel', puzzle: st.puzzle, found, gains, events: [], qno: st.qno, qcount: st.qcount }, SHOW.revealLong);
+    }
+
+    // ---------- Teken & Raad ----------
+    askTeken() {
+      const r = this.s.round;
+      const spice = this.s.settings.spice;
+      const pool = (GN.TEKEN || []).filter((t) => (t.spice || 1) <= spice);
+      if (!pool.length) { r.done = r.count; return this.roundScores(); }
+      const fresh = this.shuffle(pool.filter((t) => !this.seen['tk:' + GN.hash(t.q)]));
+      const list = fresh.length >= this.contestants().length ? fresh : this.shuffle(pool);
+      const prompts = {};
+      this.contestants().forEach((p, i) => {
+        const t = list[i % list.length];
+        prompts[p.id] = t.q;
+        this.markSeen('tk:' + GN.hash(t.q));
+      });
+      r.tk = null;
+      this.newStep('tkDraw', { prompts, drawings: {}, qno: r.done + 1, qcount: r.count }, TIME.tkDraw);
+    }
+    cleanDrawing(v) {
+      if (!Array.isArray(v)) return null;
+      let pts = 0;
+      const out = [];
+      for (const st of v.slice(0, 400)) {
+        if (!st || !Array.isArray(st.p)) continue;
+        const p = st.p.slice(0, 2400).map((n) => Math.max(0, Math.min(1000, Math.round(Number(n) || 0))));
+        if (p.length < 2) continue;
+        pts += p.length;
+        if (pts > 16000) break;
+        out.push({ c: Math.max(0, Math.min(7, st.c | 0)), w: Math.max(0, Math.min(2, st.w | 0)), p: p.length % 2 ? p.slice(0, -1) : p });
+      }
+      return out;
+    }
+    tkStart() {
+      const st = this.s.step;
+      const r = this.s.round;
+      const entries = this.shuffle(Object.keys(st.drawings).filter((pid) => st.drawings[pid].length && this.s.players[pid]))
+        .slice(0, 6)
+        .map((pid) => ({ artist: pid, prompt: st.prompts[pid], drawing: st.drawings[pid] }));
+      if (entries.length < 1) { r.done++; return this.nextQuestion(); }
+      r.tk = { entries, idx: 0 };
+      this.tkFake();
+    }
+    tkFake() {
+      const r = this.s.round;
+      const e = r.tk.entries[r.tk.idx];
+      this.newStep('tkFake', { artist: e.artist, prompt: e.prompt, drawing: e.drawing, eno: r.tk.idx + 1, etotal: r.tk.entries.length, rejected: {}, qno: r.done + 1, qcount: r.count }, TIME.tkFake);
+    }
+    tkToVote() {
+      const st = this.s.step;
+      const opts = [];
+      const add = (text, author) => {
+        const ex = opts.find((o) => norm(o.text) === norm(text));
+        if (ex) { if (author) ex.authors.push(author); return; }
+        opts.push({ text, authors: author ? [author] : [] });
+      };
+      Object.entries(st.answers).forEach(([pid, t]) => add(t, pid));
+      const decoys = this.shuffle((GN.TEKEN || []).map((t) => t.q).filter((q) => norm(q) !== norm(st.prompt)));
+      while (opts.length < 3 && decoys.length) add(decoys.shift(), null);
+      const all = this.shuffle(opts.concat([{ text: st.prompt, authors: [], truth: true }]));
+      this.newStep('tkVote', { artist: st.artist, prompt: st.prompt, drawing: st.drawing, options: all, truth: all.findIndex((o) => o.truth), eno: st.eno, etotal: st.etotal, qno: st.qno, qcount: st.qcount }, TIME.tkVote);
+    }
+    revealTk() {
+      const st = this.s.step;
+      const gains = {};
+      const add = (pid, g) => (gains[pid] = (gains[pid] || 0) + g);
+      Object.entries(st.answers).forEach(([pid, oi]) => {
+        if (oi === st.truth) {
+          add(pid, 100);
+          add(st.artist, 50);
+        } else {
+          st.options[oi].authors.forEach((a) => {
+            add(a, 50);
+            const p = this.s.players[a];
+            if (p) p.stats.fooled++;
+          });
+        }
+      });
+      Object.entries(gains).forEach(([pid, g]) => { const p = this.s.players[pid]; if (p) p.score += g; });
+      this.reveal({ of: 'tk', artist: st.artist, prompt: st.prompt, drawing: st.drawing, options: st.options, truth: st.truth, votes: st.answers, gains, events: [], eno: st.eno, etotal: st.etotal, qno: st.qno, qcount: st.qcount }, SHOW.revealLong);
+    }
+    botScribble() {
+      const strokes = [];
+      const n = 3 + Math.floor(this.rand() * 5);
+      for (let i = 0; i < n; i++) {
+        const p = [];
+        let x = 200 + this.rand() * 600, y = 200 + this.rand() * 600;
+        for (let k = 0; k < 12; k++) {
+          x = Math.max(20, Math.min(980, x + (this.rand() - 0.5) * 220));
+          y = Math.max(20, Math.min(980, y + (this.rand() - 0.5) * 220));
+          p.push(Math.round(x), Math.round(y));
+        }
+        strokes.push({ c: Math.floor(this.rand() * 6), w: Math.floor(this.rand() * 3), p });
+      }
+      return strokes;
+    }
+
     startFinal() {
       const cats = this.eligibleCats('mc');
       const cat = this.pick(cats).id;
@@ -440,11 +710,12 @@
     scheduleBots() {
       this.botQueue = [];
       const st = this.s.step;
-      const answering = ['catpick', 'mc', 'tf', 'num', 'bet', 'bluffWrite', 'bluffVote', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'wzGuess', 'wager', 'final'];
+      const answering = ['catpick', 'mc', 'tf', 'num', 'bet', 'bluffWrite', 'bluffVote', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'wzGuess', 'hl', 'lingo', 'puzzel', 'tkDraw', 'tkFake', 'tkVote', 'wager', 'final'];
       if (!answering.includes(st.kind)) return;
       this.players.filter((p) => p.isBot && p.playing).forEach((b) => {
         if (st.kind === 'catpick' && st.picker !== b.id) return;
         if (st.kind === 'wzGuess' && st.author === b.id) return;
+        if ((st.kind === 'tkFake' || st.kind === 'tkVote') && st.artist === b.id) return;
         this.botQueue.push({ at: this.now() + (1.5 + this.rand() * 6) * 1000, id: b.id, step: st.id });
       });
     }
@@ -468,6 +739,31 @@
         case 'wzGuess': {
           const others = this.contestants().filter((p) => p.id !== id);
           return this.action(id, { a: 'answer', v: this.pick(others).id });
+        }
+        case 'hl': return this.action(id, { a: 'answer', v: R() < 0.6 ? st.correct : 1 - st.correct });
+        case 'lingo': {
+          // bot doet een paar willekeurige pogingen en raadt het soms
+          const tries = 1 + Math.floor(R() * 5);
+          const same = (GN.LINGO || []).filter((w) => w[0] === st.first && w !== st.word);
+          for (let i = 0; i < tries - 1 && st.answers[id] === undefined; i++) this.lingoGuess(this.s.players[id], same.length ? this.pick(same) : st.first + 'aaaa');
+          if (st.answers[id] === undefined) this.lingoGuess(this.s.players[id], R() < 0.6 ? st.word : (same.length ? this.pick(same) : st.first + 'eeee'));
+          if (st.answers[id] === undefined) { st.answers[id] = true; this.changed(); this.checkAllIn(); }
+          return;
+        }
+        case 'puzzel': {
+          const n = Math.floor(R() * 4);
+          for (let g = 0; g < n; g++) this.puzzelGroup(this.s.players[id], st.words.map((w, i) => (w.g === g ? i : -1)).filter((i) => i >= 0));
+          if (st.answers[id] === undefined) { st.answers[id] = true; this.changed(); this.checkAllIn(); }
+          return;
+        }
+        case 'tkDraw': return this.action(id, { a: 'draw', v: this.botScribble() });
+        case 'tkFake': {
+          const pool = (GN.TEKEN || []).map((t) => t.q).filter((q) => norm(q) !== norm(st.prompt));
+          return this.action(id, { a: 'answer', v: pool.length ? this.pick(pool) : 'Een kat op een fiets' });
+        }
+        case 'tkVote': {
+          const choices = st.options.map((o, i) => i).filter((i) => !st.options[i].authors.includes(id));
+          return this.action(id, { a: 'answer', v: R() < 0.4 ? st.truth : this.pick(choices) });
         }
         case 'num': {
           const ans = st.q.answer;
@@ -521,10 +817,21 @@
         return;
       }
       if (act.a === 'skip') {
-        if (['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite'].includes(st.kind) && this.skippable()) this.skipQuestion(true);
+        if (['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'hl', 'lingo', 'puzzel'].includes(st.kind) && this.skippable()) this.skipQuestion(true);
         return;
       }
       if (act.a === 'powerup') return this.usePowerup(p, act);
+      if (act.a === 'guess' && st.kind === 'lingo') return this.lingoGuess(p, act.v);
+      if (act.a === 'group' && st.kind === 'puzzel') return this.puzzelGroup(p, act.v);
+      if (act.a === 'draw' && st.kind === 'tkDraw') {
+        if (st.answers[id] !== undefined) return;
+        const d = this.cleanDrawing(act.v);
+        if (!d) return;
+        st.drawings[id] = d;
+        st.answers[id] = true;
+        this.changed();
+        return this.checkAllIn();
+      }
       if (act.a !== 'answer') return;
       if (st.answers[id] !== undefined && st.kind !== 'bluffWrite') return;
       const v = act.v;
@@ -541,6 +848,25 @@
         }
         case 'wzGuess':
           if (id === st.author || !s.players[v] || v === id) return;
+          break;
+        case 'hl':
+          if (v !== 0 && v !== 1) return;
+          break;
+        case 'tkFake': {
+          if (id === st.artist) return;
+          const txt = String(v || '').trim().slice(0, 60);
+          if (!txt) return;
+          if (norm(txt) === norm(st.prompt)) {
+            st.rejected[id] = true;
+            return this.changed();
+          }
+          delete st.rejected[id];
+          st.answers[id] = txt;
+          this.changed();
+          return this.checkAllIn();
+        }
+        case 'tkVote':
+          if (id === st.artist || !Number.isInteger(v) || v < 0 || v >= st.options.length || st.options[v].authors.includes(id)) return;
           break;
         case 'num':
           if (typeof v !== 'number' || !isFinite(v)) return;
@@ -589,6 +915,7 @@
     skippable() {
       const st = this.s.step;
       if (!st.q) return false;
+      if (['hl', 'lingo', 'puzzel'].includes(st.kind)) return false;
       if (['ken', 'wie', 'poll', 'wzWrite'].includes(st.kind)) return (st.q.spice || 1) >= 3;
       return GN.qSpice(st.q) >= 3;
     }
@@ -599,6 +926,9 @@
       Object.entries(st.powerups || {}).forEach(([pid, pu]) => { const p = this.s.players[pid]; if (p) p.powerups.push(pu.type); });
       if (this.s.round.type === 'persoonlijk') return this.askPersonal();
       if (this.s.round.type === 'wiezei') return this.askWz();
+      if (this.s.round.type === 'lingo') return this.askLingo();
+      if (this.s.round.type === 'puzzel') return this.askPuzzel();
+      if (this.s.round.type === 'hl') { this.s.round.hl = null; this.s.round.done = 0; return this.askHL(); }
       this.ask(note);
     }
     usePowerup(p, act) {
@@ -633,7 +963,7 @@
           if (st.kind !== 'lobby' && st.kind !== 'end') return;
           const n = act.settings || {};
           if ([1, 2, 3].includes(n.spice)) s.settings.spice = n.spice;
-          if (PLANS[n.length]) s.settings.length = n.length;
+          if (SLOTS[n.length]) s.settings.length = n.length;
           if (typeof n.voice === 'boolean') s.settings.voice = n.voice;
           if ([0, 2, 3].includes(n.teams)) { s.settings.teams = n.teams; this.balanceTeams(false); }
           if (n.rounds && typeof n.rounds === 'object') {
@@ -667,7 +997,7 @@
           } else s.paused = { at: this.now() };
           return this.changed();
         case 'gm:skip':
-          if (['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite'].includes(st.kind)) this.skipQuestion(false);
+          if (['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'hl', 'lingo', 'puzzel'].includes(st.kind)) this.skipQuestion(false);
           return;
         case 'gm:next':
           if (!s.paused && st.kind !== 'lobby' && st.kind !== 'end') this.timeout();
@@ -707,6 +1037,10 @@
           return this.active();
         case 'wzGuess':
           return this.active().filter((p) => p.id !== st.author);
+        case 'hl': case 'lingo': case 'puzzel': case 'tkDraw':
+          return this.active();
+        case 'tkFake': case 'tkVote':
+          return this.active().filter((p) => p.id !== st.artist);
         case '__never':
           return this.active();
         case 'catpick': {
@@ -725,6 +1059,12 @@
         case 'tf': return this.revealMc('tf');
         case 'wzWrite': return this.wzStart();
         case 'wzGuess': return this.revealWz();
+        case 'hl': return this.revealHL();
+        case 'lingo': return this.revealLingo();
+        case 'puzzel': return this.revealPuzzel();
+        case 'tkDraw': return this.tkStart();
+        case 'tkFake': return this.tkToVote();
+        case 'tkVote': return this.revealTk();
         case 'num': return this.toBet();
         case 'bet': return this.revealNum();
         case 'bluffWrite': return this.toBluffVote();
@@ -738,6 +1078,7 @@
         case 'reveal': {
           const r = this.s.round;
           if (st.of === 'wz' && r.wz && r.wz.idx < r.wz.entries.length - 1) { r.wz.idx++; return this.wzGuess(); }
+          if (st.of === 'tk' && r.tk && r.tk.idx < r.tk.entries.length - 1) { r.tk.idx++; return this.tkFake(); }
           r.done++;
           return this.nextQuestion();
         }
@@ -1040,6 +1381,22 @@
         case 'mc': case 'final': case 'tf': v.options = st.options; if (st.kind === 'final') v.wagers = st.wagers; break;
         case 'wzWrite': v.text = st.text; break;
         case 'wzGuess': v.text = st.text; v.entry = st.entry; v.eno = st.eno; v.etotal = st.etotal; v.author = st.author; break;
+        case 'hl': v.set = st.set; v.a = st.a; v.b = st.b; break;
+        case 'lingo': {
+          v.first = st.first;
+          v.grids = {};
+          Object.entries(st.prog).forEach(([pid, pr]) => (v.grids[pid] = pr.g.map((x) => x.m)));
+          break;
+        }
+        case 'puzzel': {
+          v.words = st.words.map((w) => w.w);
+          v.found = {};
+          Object.entries(st.prog).forEach(([pid, pr]) => (v.found[pid] = pr.found.length));
+          break;
+        }
+        case 'tkDraw': break;
+        case 'tkFake': v.drawing = st.drawing; v.eno = st.eno; v.etotal = st.etotal; v.artist = st.artist; break;
+        case 'tkVote': v.drawing = st.drawing; v.eno = st.eno; v.etotal = st.etotal; v.artist = st.artist; v.options = st.options.map((o) => o.text); break;
         case 'bet': v.guesses = st.guesses; break;
         case 'bluffVote': v.options = st.options.map((o) => o.text); break;
         case 'order': v.items = st.items; break;
@@ -1074,7 +1431,7 @@
       const v = { me, kind: st.kind, stepId: st.id, paused: !!s.paused, deadline: st.deadline, duration: st.duration, remaining: this.remaining(), answered, settings: s.settings };
       const teams = this.teamScores();
       if (teams) { v.teams = teams.map((t) => ({ id: t.id, name: t.name, emoji: t.emoji, color: t.color, score: t.score, size: t.size })); }
-      v.gm = isGm ? { canSkip: ['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite'].includes(st.kind), canNext: !['lobby', 'end'].includes(st.kind), players: this.players.map((x) => this.pub(x)) } : null;
+      v.gm = isGm ? { canSkip: ['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'hl', 'lingo', 'puzzel'].includes(st.kind), canNext: !['lobby', 'end'].includes(st.kind), players: this.players.map((x) => this.pub(x)) } : null;
       if (st.cat) v.cat = this.catInfo(st.cat);
       const qtext = st.q ? st.q.q : null;
       v.key = st.kind + ':' + st.id + ':' + (answered ? 'a' : 'n') + (p.playing ? '' : ':gm');
@@ -1103,6 +1460,52 @@
           v.options = st.options.map((c) => this.catInfo(c));
           v.title = st.picker === id ? 'Jij staat laatst, jij kiest!' : `${this.name(st.picker)} kiest een categorie…`;
           v.big = '🎡';
+          break;
+        case 'hl':
+          v.screen = 'hl';
+          v.set = st.set; v.a = st.a; v.b = st.b;
+          v.myAnswer = st.answers[id];
+          v.streak = s.round && s.round.hl ? s.round.hl.streak[id] || 0 : 0;
+          break;
+        case 'lingo': {
+          v.screen = 'lingo';
+          const pr = st.prog[id] || { g: [], solved: false };
+          v.first = st.first;
+          v.rows = pr.g;
+          v.solved = pr.solved;
+          v.key += ':' + pr.g.length;
+          break;
+        }
+        case 'puzzel': {
+          v.screen = 'puzzel';
+          const pr = st.prog[id] || { found: [], mistakes: 0, last: null };
+          v.words = st.words.map((w) => w.w);
+          v.foundIdx = pr.found.map((g) => ({ g, idx: st.words.map((w, i) => (w.g === g ? i : -1)).filter((i) => i >= 0) }));
+          v.mistakes = pr.mistakes;
+          v.last = pr.last;
+          v.groups = st.puzzle.groups.length;
+          v.key += ':' + pr.found.length + ':' + pr.mistakes;
+          break;
+        }
+        case 'tkDraw':
+          v.screen = 'draw';
+          v.prompt = st.prompts[id] || '';
+          break;
+        case 'tkFake':
+          if (st.artist === id) { v.screen = 'wait'; v.big = '🎨'; v.title = 'Jouw tekening!'; v.sub = 'De rest verzint nu een titel. Hou je pokerface.'; v.key += ':artist'; break; }
+          v.screen = 'write';
+          v.tk = true;
+          v.q = 'Bedenk een titel voor de tekening op de TV';
+          v.myAnswer = st.answers[id];
+          v.rejected = !!st.rejected[id];
+          v.key += st.rejected[id] ? ':r' : '';
+          break;
+        case 'tkVote':
+          if (st.artist === id) { v.screen = 'wait'; v.big = '🤞'; v.title = 'Ze stemmen op jouw tekening'; v.sub = 'Hopelijk raden ze de echte titel.'; v.key += ':artist'; break; }
+          v.screen = 'bluffvote';
+          v.q = 'Wat is de echte titel?';
+          v.options = st.options.map((o) => ({ text: o.text, mine: o.authors.includes(id) }));
+          v.myAnswer = st.answers[id];
           break;
         case 'tf':
           v.screen = 'choice';
@@ -1221,7 +1624,7 @@
         v.targets = this.contestants().filter((x) => x.id !== id).map((x) => ({ id: x.id, name: x.name, avatar: x.avatar }));
       }
       v.usedPowerup = st.powerups && st.powerups[id] ? st.powerups[id].type : null;
-      v.skippable = ['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite'].includes(st.kind) && this.skippable();
+      v.skippable = ['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'hl', 'lingo', 'puzzel'].includes(st.kind) && this.skippable();
       return v;
     }
     resultLine(id, st) {
@@ -1229,6 +1632,10 @@
         case 'mc': return st.right.includes(id) ? 'Goed!' : `Het was: ${st.options[st.correct]}`;
         case 'final': return st.right.includes(id) ? 'Goed! Inzet verdubbeld 💰' : `Fout… het was: ${st.options[st.correct]}`;
         case 'tf': return st.right.includes(id) ? 'Goed!' : `Fout, het was ${st.options[st.correct].toLowerCase()}`;
+        case 'hl': return st.right.includes(id) ? (st.streak[id] > 1 ? `Goed! ${st.streak[id]} op rij 🔥` : 'Goed!') : `Fout: ${st.b.show}`;
+        case 'lingo': return st.right.includes(id) ? `Geraden: ${st.word.toUpperCase()}` : `Het woord was ${st.word.toUpperCase()}`;
+        case 'puzzel': return `${st.found[id] || 0} van de ${st.puzzle.groups.length} verbanden gevonden`;
+        case 'tk': return st.artist === id ? 'Zo deed jouw tekening het' : st.votes[id] === st.truth ? 'Je vond de echte titel!' : 'Mis!';
         case 'wz': return st.author === id ? (st.gains[id] ? `Je luisde er ${st.gains[id] / 50} in 😏` : 'Iedereen had je door 😅') : st.right.includes(id) ? 'Goed geraden!' : `Het was ${this.name(st.author)}`;
         case 'num': return `Het antwoord: ${fmtNum(st.q.answer)}${st.q.unit ? ' ' + st.q.unit : ''}`;
         case 'bluff': {

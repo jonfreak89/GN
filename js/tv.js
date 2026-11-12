@@ -197,6 +197,7 @@
     else if (['mc', 'tf', 'num', 'bluffWrite', 'order', 'final'].includes(v.kind) && v.q) say(v.q.q);
     else if (v.kind === 'ken' || v.kind === 'wie' || v.kind === 'poll' || v.kind === 'wzWrite') say(v.text);
     else if (v.kind === 'wzGuess') say('Wie zei dit? ' + v.entry);
+    else if (v.kind === 'hl') say(`${v.b.n}: ${v.set.hi.toLowerCase()} of ${v.set.lo.toLowerCase()} dan ${v.a.n}?`);
     else if (v.kind === 'reveal' && v.reveal.options && v.reveal.correct !== undefined && v.reveal.of !== 'ken') say('Het juiste antwoord is: ' + v.reveal.options[v.reveal.correct]);
     else if (v.kind === 'reveal' && v.reveal.of === 'num') say('Het antwoord is ' + v.reveal.q.answer);
   }
@@ -241,6 +242,8 @@
   function updateLive(v) {
     const w = $('.waitline', stage);
     if (w) w.outerHTML = waitLine(v);
+    if (v.kind === 'lingo') { const g = $('#lingogrids', stage); if (g) g.innerHTML = lingoGrids(v.players.filter((p) => p.playing), v.grids); }
+    if (v.kind === 'puzzel') { const g = $('#puzprog', stage); if (g) g.innerHTML = puzProg(v); }
     if (v.kind === 'lobby') {
       const h = $('#lobbyhint', stage);
       if (h) h.innerHTML = lobbyHint(v);
@@ -375,6 +378,54 @@
       <div class="wiegrid">${v.players.filter((p) => p.playing).map((p, i) => `<div class="wiecard rise" style="--c:${p.color};animation-delay:${i * 0.06}s"><div class="av">${p.avatar}</div><div class="nm">${esc(p.name)}</div></div>`).join('')}</div>
       ${waitLine(v)}</div>`,
 
+    hl: (v) => `<div class="panel center">
+      <div class="qhead"><span class="cat">${v.set.emoji} ${esc(v.set.title)}</span></div>
+      <div class="hlrow">
+        <div class="hlcard pop"><div class="n">${esc(v.a.n)}</div><div class="v">${esc(v.a.show)}</div></div>
+        <div class="hlvs">VS</div>
+        <div class="hlcard q pop" style="animation-delay:.15s"><div class="n">${esc(v.b.n)}</div><div class="v">?</div></div>
+      </div>
+      <div class="hlbtns"><span>⬆️ ${esc(v.set.hi)}</span><span>⬇️ ${esc(v.set.lo)}</span></div>
+      ${waitLine(v)}</div>`,
+
+    lingo: (v) => {
+      const ps = v.players.filter((p) => p.playing);
+      return `<div class="panel center">
+      <div class="qhead"><span class="cat">🟩 Lingo</span></div>
+      <div class="lingoword">${[v.first.toUpperCase(), '', '', '', ''].map((l, i) => `<span class="${i ? '' : 'g'}">${l || '·'}</span>`).join('')}</div>
+      <div class="lingogrids" id="lingogrids">${lingoGrids(ps, v.grids)}</div>
+      ${waitLine(v)}</div>`;
+    },
+
+    puzzel: (v) => `<div class="panel center">
+      <div class="qhead"><span class="cat">🧩 De Puzzel</span><span>Vind drie groepjes van vier</span></div>
+      <div class="puzgrid">${v.words.map((w, i) => `<div class="puzw pop" style="animation-delay:${i * 0.04}s">${esc(w)}</div>`).join('')}</div>
+      <div class="puzprog" id="puzprog">${puzProg(v)}</div>
+      ${waitLine(v)}</div>`,
+
+    tkDraw: (v) => `<div class="intro center">
+      <div class="big">🎨</div>
+      <h2 class="pop">Iedereen tekent…</h2>
+      <p class="rise">Kijk niet bij elkaar! Iedereen heeft een eigen geheime opdracht op zijn telefoon.</p>
+      ${waitLine(v)}</div>`,
+
+    tkFake: (v) => `<div class="tkwrap">
+      <div class="tkdraw pop">${GN.drawingSvg(v.drawing)}</div>
+      <div class="tkside">
+        <div class="qhead" style="justify-content:flex-start"><span class="cat">🎨 Tekening ${v.eno} van ${v.etotal}</span></div>
+        <div class="qtext" style="text-align:left;font-size:2.4em;margin-left:0">Wat stelt dit voor?</div>
+        <div class="qsub" style="text-align:left">Verzin een titel waar de anderen in trappen. De tekenaar kijkt mee 🤫</div>
+        ${waitLine(v)}
+      </div></div>`,
+
+    tkVote: (v) => `<div class="tkwrap">
+      <div class="tkdraw">${GN.drawingSvg(v.drawing)}</div>
+      <div class="tkside">
+        <div class="qhead" style="justify-content:flex-start"><span class="cat">🎨 Wat is de echte titel?</span></div>
+        <div class="opts one">${v.options.map((o, i) => `<div class="opt pop" style="animation-delay:${i * 0.08}s"><span class="l">${LETTERS[i]}</span>${esc(o)}</div>`).join('')}</div>
+        ${waitLine(v)}
+      </div></div>`,
+
     poll: (v) => `<div class="panel center">
       <div class="qhead"><span class="cat">🙈 Gênante enquête</span></div>
       <div class="${qClass(v.text)} pop">${esc(v.text)}</div>
@@ -424,7 +475,59 @@
   const factBox = (q) => (q && q.fact ? `<div class="fact">${esc(q.fact)}</div>` : '');
   const eventsBox = (r) => (r.events && r.events.length ? `<div class="events">${r.events.map((e) => `<span>${esc(e)}</span>`).join('')}</div>` : '');
 
+  const MARKC = { g: 'var(--mint)', y: 'var(--amber)', '-': 'var(--ink-3)' };
+  function lingoGrids(ps, grids) {
+    return ps.map((p) => {
+      const rows = (grids && grids[p.id]) || [];
+      const cells = [0, 1, 2, 3, 4].map((r) => `<div class="lgrow">${[0, 1, 2, 3, 4].map((c) => `<i style="background:${rows[r] ? MARKC[rows[r][c]] : 'transparent'}"></i>`).join('')}</div>`).join('');
+      return `<div class="lgp" style="--c:${p.color}"><div class="lgcells">${cells}</div><div class="lgn">${p.avatar} ${esc(p.name)}</div></div>`;
+    }).join('');
+  }
+  function puzProg(v) {
+    const ps = v.players.filter((p) => p.playing);
+    return ps.map((p) => `<span>${p.avatar} ${esc(p.name)} ${[0, 1, 2].map((i) => (i < (v.found[p.id] || 0) ? '🟩' : '⬜')).join('')}</span>`).join('');
+  }
+  const PUZC = ['#3ddc97', '#4cc9f0', '#ffb627'];
+
   const REVEALS = {
+    hl: (v, r) => {
+      const m = pmap(v);
+      const by = (i) => Object.keys(r.picks || {}).filter((id) => r.picks[id] === i);
+      const hot = Object.entries(r.streak || {}).filter(([id, n]) => n >= 2 && m[id]).map(([id, n]) => `🔥 ${esc(m[id].name)}: ${n} op rij`);
+      return `<div class="panel center">
+        <div class="qhead"><span class="cat">${r.set.emoji} ${esc(r.set.title)}</span></div>
+        <div class="hlrow">
+          <div class="hlcard"><div class="n">${esc(r.a.n)}</div><div class="v">${esc(r.a.show)}</div></div>
+          <div class="hlvs">${r.correct === 0 ? '⬆️' : '⬇️'}</div>
+          <div class="hlcard q win pop"><div class="n">${esc(r.b.n)}</div><div class="v">${esc(r.b.show)}</div></div>
+        </div>
+        <div class="hlbtns">${[r.set.hi, r.set.lo].map((t, i) => `<span class="${i === r.correct ? 'right' : 'wrong'}">${i ? '⬇️' : '⬆️'} ${esc(t)}${voters(by(i), m)}</span>`).join('')}</div>
+        ${hot.length ? `<div class="events">${hot.map((h) => `<span>${h}</span>`).join('')}</div>` : ''}</div>`;
+    },
+    lingo: (v, r) => {
+      const ps = v.players.filter((p) => p.playing);
+      return `<div class="panel center">
+        <div class="qhead"><span class="cat">🟩 Lingo</span></div>
+        <div class="lingoword">${r.word.toUpperCase().split('').map((l, i) => `<span class="g pop" style="animation-delay:${i * 0.12}s">${l}</span>`).join('')}</div>
+        <div class="lingogrids">${lingoGrids(ps, r.grids)}</div></div>`;
+    },
+    puzzel: (v, r) => {
+      const m = pmap(v);
+      return `<div class="panel center">
+        <div class="qhead"><span class="cat">🧩 De Puzzel</span></div>
+        <div class="puzsol">${r.puzzle.groups.map((g, i) => `<div class="puzrow rise" style="--g:${PUZC[i]};animation-delay:${i * 0.5}s"><b>${esc(g.name)}</b><span>${g.words.map(esc).join(' · ')}</span></div>`).join('')}</div>
+        <div class="puzprog">${Object.entries(r.found).map(([id, n]) => (m[id] ? `<span>${m[id].avatar} ${esc(m[id].name)} ${[0, 1, 2].map((i) => (i < n ? '🟩' : '⬜')).join('')}</span>` : '')).join('')}</div></div>`;
+    },
+    tk: (v, r) => {
+      const m = pmap(v);
+      const a = m[r.artist];
+      const vot = (i) => Object.keys(r.votes).filter((id) => r.votes[id] === i);
+      return `<div class="tkwrap">
+        <div class="tkdraw">${GN.drawingSvg(r.drawing)}<div class="tkby">getekend door ${a ? a.avatar + ' ' + esc(a.name) : '?'}</div></div>
+        <div class="tkside"><div class="opts one">${r.options.map((o, i) => `<div class="opt ${i === r.truth ? 'right' : ''}">
+          ${i === r.truth ? '<span class="tag" style="background:var(--mint);color:var(--ink)">ECHT</span>' : o.authors.length ? `<span class="tag">nep van ${o.authors.map((x) => esc(m[x] ? m[x].name : '?')).join(' & ')}</span>` : '<span class="tag" style="background:var(--ink-3)">nep van de quizmaster</span>'}
+          <span class="l">${LETTERS[i]}</span>${esc(o.text)}${voters(vot(i), m)}</div>`).join('')}</div></div></div>`;
+    },
     tf: (v, r) => {
       const m = pmap(v);
       const by = (i) => Object.keys(m).filter((id) => r.picks && r.picks[id] === i);

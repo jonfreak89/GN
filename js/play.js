@@ -240,6 +240,14 @@
         <div class="choices">${v.guesses.map((g, i) => `<button class="ch" data-i="${i}"><span class="l" style="background:var(--violet)">🎲</span><span style="font-family:var(--display);font-weight:800;font-size:22px">${GN.fmtNum(g.v)}</span>${g.mine ? '<small class="sub" style="margin-left:auto">jouw schatting</small>' : ''}</button>`).join('')}</div>`;
     },
     write(v) {
+      if (v.tk) {
+        if (v.answered) return waitBox('Titel ingeleverd 😏', `<b>"${esc(v.myAnswer)}"</b>`);
+        return `<div class="catline">🎨 Teken & Raad</div>${qHtml(v.q)}
+          <div class="sub">Kijk naar de TV en verzin een titel waar de anderen in trappen.</div>
+          ${v.rejected ? '<div class="card" style="border-color:var(--pink)">😱 Dat is precies de echte titel! Verzin iets anders.</div>' : ''}
+          <input class="field" id="txt" maxlength="60" autocomplete="off" placeholder="Jouw titel">
+          <button class="cta pink" id="send" disabled>Titel insturen</button>`;
+      }
       if (v.wz) {
         if (v.answered) return waitBox('Anoniem ingeleverd 🤫', `<b>"${esc(v.myAnswer)}"</b><br>Straks moet iedereen raden dat dit van jou is.`);
         return `<div class="catline">🗯️ Wie zei dit? · anoniem</div>${qHtml(v.q)}
@@ -304,6 +312,54 @@
       return `<div class="big">${team && v.teamRank === 1 ? '🏆' : medal}</div><div class="title">${team ? (v.teamRank === 1 ? `${team.emoji} Jullie winnen!` : `${team.emoji} Team ${v.teamRank}e`) : v.rank ? `${v.rank}e plaats` : 'Klaar!'}</div><p class="center">${team ? `Jij werd ${v.rank}e met ` : ''}${v.me.score} punten</p>
         ${v.awards.map((a) => `<div class="awardline">${a.emoji} <b>${esc(a.title)}</b><br><small class="sub">${esc(a.text)}</small></div>`).join('')}
         ${v.me.isGm ? '<button class="cta" id="again">Nog een keer! 🔁</button><button class="cta ghost" id="tolobby">Terug naar lobby</button>' : '<p class="sub center">De spelleider beslist of er nog een potje komt</p>'}`;
+    },
+    hl(v) {
+      if (v.answered) return waitBox('Gekozen!', `Jij zegt: <b>${v.myAnswer === 0 ? '⬆️ ' + esc(v.set.hi) : '⬇️ ' + esc(v.set.lo)}</b>`);
+      return `<div class="catline">${v.set.emoji} ${esc(v.set.title)}${v.streak > 1 ? ` · 🔥 ${v.streak} op rij` : ''}</div>
+        <div class="hlcards"><div class="card"><div class="sub">${esc(v.a.n)}</div><b>${esc(v.a.show)}</b></div>
+        <div class="card"><div class="sub">${esc(v.b.n)}</div><b>?</b></div></div>
+        <div class="tfbtns"><button class="ch tfw" data-i="0">⬆️<b>${esc(v.set.hi)}</b></button><button class="ch tfn" data-i="1">⬇️<b>${esc(v.set.lo)}</b></button></div>`;
+    },
+    lingo(v) {
+      ui.cur = ui.cur || v.first;
+      const rows = v.rows.slice();
+      const html = [0, 1, 2, 3, 4].map((r) => {
+        const row = rows[r];
+        if (row) return `<div class="lrow">${row.w.split('').map((l, i) => `<span class="m${row.m[i]}">${l.toUpperCase()}</span>`).join('')}</div>`;
+        if (r === rows.length && !v.answered) return `<div class="lrow cur" id="lcur">${[0, 1, 2, 3, 4].map(() => '<span></span>').join('')}</div>`;
+        return `<div class="lrow">${[0, 1, 2, 3, 4].map(() => '<span></span>').join('')}</div>`;
+      }).join('');
+      const best = {};
+      const rank = { g: 3, y: 2, '-': 1 };
+      rows.forEach((row) => row.w.split('').forEach((l, i) => { if (!best[l] || rank[row.m[i]] > rank[best[l]]) best[l] = row.m[i]; }));
+      const kb = ['qwertyuiop', 'asdfghjkl', '<zxcvbnm>'].map((line) => `<div class="krow">${line.split('').map((k) => k === '<' ? '<button class="key wide" data-k="enter">⏎</button>' : k === '>' ? '<button class="key wide" data-k="back">⌫</button>' : `<button class="key m${best[k] || ''}" data-k="${k}">${k.toUpperCase()}</button>`).join('')}</div>`).join('');
+      const status = v.answered ? (v.solved ? `<div class="card" style="border-color:var(--mint)">🎉 Geraden in ${rows.length} ${rows.length === 1 ? 'poging' : 'pogingen'}!</div>` : '<div class="card">😬 Pogingen op. Het woord zie je straks op de TV.</div>') : '<div class="sub center" id="lmsg">Woord van 5 letters, de eerste letter staat al klaar</div>';
+      return `<div class="catline">🟩 Lingo · ${rows.length}/5 pogingen</div><div class="lgrid">${html}</div>${status}${v.answered ? '' : `<div class="kb">${kb}</div>`}`;
+    },
+    puzzel(v) {
+      ui.sel = ui.sel || [];
+      const done = new Set(v.foundIdx.flatMap((f) => f.idx));
+      const colors = ['#3ddc97', '#4cc9f0', '#ffb627'];
+      const found = v.foundIdx.map((f, i) => `<div class="pfound" style="--g:${colors[i]}">✓ ${f.idx.map((k) => esc(v.words[k])).join(' · ')}</div>`).join('');
+      const hearts = [0, 1, 2].map((i) => (i < 3 - v.mistakes ? '❤️' : '🖤')).join('');
+      const msg = v.last === 'bijna' ? '😮 Bijna! Drie van de vier horen bij elkaar.' : v.last === 'fout' ? '❌ Dat is geen groepje.' : v.last === 'ok' ? '✅ Goed!' : 'Kies vier woorden die bij elkaar horen';
+      if (v.answered) return `<div class="catline">🧩 De Puzzel</div>${found}${waitBox(v.foundIdx.length === v.groups ? 'Alles gevonden! 🎉' : 'Klaar', `${v.foundIdx.length} van de ${v.groups} groepjes`)}`;
+      return `<div class="catline">🧩 De Puzzel · levens ${hearts}</div>${found}
+        <div class="sub">${msg}</div>
+        <div class="pgrid">${v.words.map((w, i) => (done.has(i) ? '' : `<button class="pw" data-w="${i}">${esc(w)}</button>`)).join('')}</div>
+        <button class="cta" id="send" disabled>Controleer</button>`;
+    },
+    draw(v) {
+      if (v.answered) return waitBox('Tekening ingeleverd 🎨', 'Wacht tot iedereen klaar is.');
+      ui.strokes = ui.strokes || [];
+      ui.color = ui.color == null ? 0 : ui.color;
+      ui.width = ui.width == null ? 1 : ui.width;
+      return `<div class="catline">🎨 Teken (geheim!)</div><div class="q">${esc(v.prompt)}</div>
+        <canvas id="cv" class="cv"></canvas>
+        <div class="tools">${GN.PALETTE.map((c, i) => `<button class="sw-c" data-c="${i}" style="background:${c}"></button>`).join('')}</div>
+        <div class="tools">${GN.WIDTHS.map((w, i) => `<button class="sw-w" data-wd="${i}"><i style="width:${6 + i * 6}px;height:${6 + i * 6}px"></i></button>`).join('')}
+          <button class="cta ghost small" id="undo">↶ Terug</button><button class="cta ghost small" id="clear">Wissen</button></div>
+        <button class="cta" id="send">Klaar ✓</button>`;
     },
     kicked() {
       return `<div class="big">👋</div><div class="title">Je bent uit het spel gehaald</div><button class="cta ghost" id="rejoin">Opnieuw meedoen</button>`;
@@ -421,11 +477,117 @@
         on('#send', () => act('answer', { v: { yes: ui.yes, guess: ui.guess } }));
         break;
       }
+      case 'hl':
+        screen.querySelectorAll('.ch[data-i]').forEach((b) => (b.onclick = () => act('answer', { v: +b.dataset.i })));
+        break;
+      case 'lingo': {
+        const paint = () => {
+          const row = $('#lcur');
+          if (!row) return;
+          row.querySelectorAll('span').forEach((sp, i) => (sp.textContent = (ui.cur[i] || '').toUpperCase()));
+        };
+        const press = (k) => {
+          if (v.answered) return;
+          if (k === 'back') { if (ui.cur.length > 1) ui.cur = ui.cur.slice(0, -1); }
+          else if (k === 'enter') {
+            if (ui.cur.length === 5) { act('guess', { v: ui.cur }); ui.cur = v.first; }
+            else { const m = $('#lmsg'); if (m) m.textContent = 'Nog niet vijf letters!'; }
+          } else if (/^[a-z]$/.test(k) && ui.cur.length < 5) ui.cur += k;
+          paint();
+        };
+        screen.querySelectorAll('[data-k]').forEach((b) => (b.onclick = () => press(b.dataset.k)));
+        document.onkeydown = (e) => {
+          if (!view || view.screen !== 'lingo') return;
+          if (e.key === 'Enter') press('enter');
+          else if (e.key === 'Backspace') press('back');
+          else if (/^[a-zA-Z]$/.test(e.key)) press(e.key.toLowerCase());
+        };
+        paint();
+        break;
+      }
+      case 'puzzel': {
+        const paint = () => {
+          screen.querySelectorAll('[data-w]').forEach((b) => b.classList.toggle('on', ui.sel.includes(+b.dataset.w)));
+          const sb = $('#send');
+          if (sb) sb.disabled = ui.sel.length !== 4;
+        };
+        screen.querySelectorAll('[data-w]').forEach((b) => (b.onclick = () => {
+          const i = +b.dataset.w;
+          const k = ui.sel.indexOf(i);
+          if (k >= 0) ui.sel.splice(k, 1); else if (ui.sel.length < 4) ui.sel.push(i);
+          paint();
+        }));
+        on('#send', () => { act('group', { v: ui.sel.slice() }); ui.sel = []; paint(); });
+        paint();
+        break;
+      }
+      case 'draw':
+        wireCanvas();
+        break;
       case 'end':
         on('#again', () => act('gm:start'));
         on('#tolobby', () => act('gm:lobby'));
         break;
     }
+  }
+  function wireCanvas() {
+    const cv = $('#cv');
+    if (!cv) return;
+    const size = Math.min(screen.clientWidth || 360, 480);
+    const dpr = window.devicePixelRatio || 1;
+    cv.style.width = cv.style.height = size + 'px';
+    cv.width = cv.height = Math.round(size * dpr);
+    const ctx = cv.getContext('2d');
+    const k = (size * dpr) / 1000;
+    const redraw = () => {
+      ctx.fillStyle = '#fffaf0';
+      ctx.fillRect(0, 0, cv.width, cv.height);
+      ui.strokes.forEach((st) => {
+        ctx.strokeStyle = GN.PALETTE[st.c];
+        ctx.lineWidth = GN.WIDTHS[st.w] * k;
+        ctx.lineCap = ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(st.p[0] * k, st.p[1] * k);
+        for (let i = 2; i < st.p.length; i += 2) ctx.lineTo(st.p[i] * k, st.p[i + 1] * k);
+        if (st.p.length === 2) ctx.lineTo(st.p[0] * k + 0.1, st.p[1] * k);
+        ctx.stroke();
+      });
+    };
+    const pos = (e) => {
+      const r = cv.getBoundingClientRect();
+      return [Math.round(((e.clientX - r.left) / r.width) * 1000), Math.round(((e.clientY - r.top) / r.height) * 1000)];
+    };
+    let cur = null;
+    cv.onpointerdown = (e) => {
+      e.preventDefault();
+      cv.setPointerCapture(e.pointerId);
+      cur = { c: ui.color, w: ui.width, p: pos(e) };
+      ui.strokes.push(cur);
+      redraw();
+    };
+    cv.onpointermove = (e) => {
+      if (!cur) return;
+      const [x, y] = pos(e);
+      const n = cur.p.length;
+      if (Math.abs(x - cur.p[n - 2]) + Math.abs(y - cur.p[n - 1]) < 6) return;
+      cur.p.push(x, y);
+      redraw();
+    };
+    cv.onpointerup = cv.onpointercancel = () => (cur = null);
+    const mark = () => {
+      screen.querySelectorAll('[data-c]').forEach((b) => b.classList.toggle('on', +b.dataset.c === ui.color));
+      screen.querySelectorAll('[data-wd]').forEach((b) => b.classList.toggle('on', +b.dataset.wd === ui.width));
+    };
+    screen.querySelectorAll('[data-c]').forEach((b) => (b.onclick = () => { ui.color = +b.dataset.c; mark(); }));
+    screen.querySelectorAll('[data-wd]').forEach((b) => (b.onclick = () => { ui.width = +b.dataset.wd; mark(); }));
+    $('#undo').onclick = () => { ui.strokes.pop(); redraw(); };
+    $('#clear').onclick = () => { if (!ui.strokes.length || confirm('Alles wissen?')) { ui.strokes = []; redraw(); } };
+    $('#send').onclick = () => {
+      if (!ui.strokes.length && !confirm('Lege tekening insturen?')) return;
+      act('draw', { v: ui.strokes.length ? ui.strokes : [{ c: 0, w: 1, p: [500, 500, 501, 501] }] });
+    };
+    mark();
+    redraw();
   }
   function wireGmPlayers(root) {
     root.querySelectorAll('[data-kick]').forEach((b) => (b.onclick = () => { if (confirm('Deze speler verwijderen?')) act('gm:kick', { id: b.dataset.kick }); }));

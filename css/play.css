@@ -115,3 +115,35 @@ input[type=range] { width: 100%; accent-color: var(--amber); height: 40px; }
 .rounds button { background: var(--ink-3); border: 2px solid transparent; border-radius: 99px; padding: 8px 12px; font-size: 14px; opacity: .5; text-decoration: line-through; }
 .rounds button.on { opacity: 1; text-decoration: none; border-color: var(--mint); background: rgba(61, 220, 151, .12); }
 .rounds button[disabled] { border-color: var(--amber); background: rgba(255, 182, 39, .12); }
+
+/* hoger of lager */
+.hlcards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.hlcards .card b { font-family: var(--display); font-size: 24px; color: var(--amber); }
+/* lingo */
+.lgrid { display: grid; gap: 6px; justify-content: center; }
+.lrow { display: flex; gap: 6px; }
+.lrow span { width: 52px; height: 52px; display: grid; place-items: center; border: 2px solid var(--line); border-radius: 10px; font-family: var(--display); font-weight: 800; font-size: 26px; background: var(--ink-2); }
+.lrow.cur span { border-color: var(--amber); }
+.lrow .mg, .key.mg { background: var(--mint); color: var(--ink); border-color: var(--mint); }
+.lrow .my, .key.my { background: var(--amber); color: var(--ink); border-color: var(--amber); border-radius: 50%; }
+.lrow .m- { background: var(--ink-3); color: var(--muted); }
+.key.m- { opacity: .35; }
+.kb { display: grid; gap: 6px; margin-top: auto; }
+.krow { display: flex; gap: 5px; justify-content: center; }
+.key { flex: 1; max-width: 40px; height: 50px; border: 0; border-radius: 8px; background: var(--ink-3); font-weight: 700; font-size: 16px; padding: 0; }
+.key.my { border-radius: 8px; }
+.key.wide { max-width: 60px; flex: 1.5; background: var(--violet); color: white; }
+/* puzzel */
+.pgrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.pw { background: var(--ink-2); border: 2px solid var(--line); border-radius: 12px; padding: 14px 4px; font-weight: 700; font-size: 15px; min-height: 58px; word-break: break-word; }
+.pw.on { border-color: var(--amber); background: rgba(255, 182, 39, .18); }
+.pfound { border: 2px solid var(--g); background: color-mix(in srgb, var(--g) 16%, transparent); border-radius: 12px; padding: 10px; font-weight: 700; }
+/* tekenen */
+.cv { display: block; margin: 0 auto; border-radius: 16px; touch-action: none; box-shadow: 0 6px 20px rgba(0, 0, 0, .4); }
+.tools { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; }
+.sw-c { width: 36px; height: 36px; border-radius: 50%; border: 3px solid transparent; }
+.sw-c.on { border-color: var(--amber); transform: scale(1.12); }
+.sw-w { width: 44px; height: 40px; border-radius: 10px; background: var(--ink-3); border: 2px solid transparent; display: grid; place-items: center; }
+.sw-w i { display: block; border-radius: 50%; background: var(--text); }
+.sw-w.on { border-color: var(--amber); }
+.tools .cta.small { width: auto; }
