@@ -59,7 +59,8 @@
   GN.addQuestions = function (cat, list) {
     list.forEach((q) => {
       q.cat = q.cat || cat;
-      if (!q.id) q.id = q.cat + ':' + q.type + ':' + GN.hash(q.q);
+      // volgorde-vragen delen vaak dezelfde vraagtekst: dan tellen de items mee
+      if (!q.id) q.id = q.cat + ':' + q.type + ':' + GN.hash(q.q + (q.items ? '|' + q.items.map((i) => i[0]).join(',') : ''));
       GN.QUESTIONS.push(q);
     });
   };
