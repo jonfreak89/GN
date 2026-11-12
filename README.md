@@ -32,6 +32,9 @@ Na een minuutje staat het op `https://jonfreak89.github.io/GN/`.
 | Teken & Raad | Teken je geheime opdracht, verzin nep-titels, zoek de echte |
 | Twee waarheden en een leugen | Schrijf drie dingen over jezelf, de rest zoekt de leugen |
 | Top 5 | De hete stoel zet vijf dingen op volgorde, de rest raadt het lijstje |
+| Echt of verzonnen? | Het begin van een waargebeurd verhaal: verzin hoe het afliep en zoek het echte einde |
+| Invulverhaal | Vul woorden in zonder te weten waar het over gaat, de TV leest het verhaal voor. Stem op het grappigste woord |
+| Verhalenketting | Iedereen schrijft om de beurt een zin en ziet alleen de vorige. Daarna voorlezen en stemmen op de beste zin |
 | Finale | Zet in wat je durft op één laatste vraag |
 
 Extra's: de laatste plaats kiest de categorie, power-ups (Dubbel, 50/50, Stelen, Sabotage, Schild), troost-power-up voor de laatste na elke ronde, awards aan het eind, anonieme overslaan-knop bij 18+ vragen.
@@ -59,7 +62,9 @@ GN.addQuestions('dieren', [
 ]);
 ```
 
-Persoonlijke vragen staan in `data/persoonlijk.js`.
+Persoonlijke vragen staan in `data/persoonlijk.js`. Invulverhalen, openingszinnen en waargebeurde verhalen staan in `data/verhalen.js`.
+
+Tip: zet bij de verhalenrondes *TV leest vragen voor* aan, dan worden de verhalen hardop voorgelezen.
 
 ## Testen in één browser
 

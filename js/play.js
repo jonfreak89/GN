@@ -259,7 +259,14 @@
           <input class="field" id="txt" maxlength="80" autocomplete="off" placeholder="Jouw antwoord">
           <button class="cta" id="send" disabled>Insturen</button>${foot(v)}`;
       }
-      if (v.answered) return waitBox('Bluf ingeleverd 😏', `<b>"${esc(v.myAnswer)}"</b>`);
+      if (v.answered) return waitBox(v.story ? 'Verzinsel ingeleverd 😏' : 'Bluf ingeleverd 😏', `<b>"${esc(v.myAnswer)}"</b>`);
+      if (v.story) {
+        return `<div class="catline">📰 Echt of verzonnen? · waargebeurd</div>${qHtml(v.q)}
+        <div class="sub">Verzin hoe het afliep. Maak het geloofwaardig, zodat de anderen erin trappen.</div>
+        ${v.rejected ? '<div class="card" style="border-color:var(--pink)">😱 Dat is precies hoe het echt afliep! Verzin iets anders.</div>' : ''}
+        <textarea class="field" id="txt" maxlength="120" rows="3" autocomplete="off" placeholder="Hoe liep het af?"></textarea>
+        <button class="cta pink" id="send" disabled>Insturen</button>${foot(v)}`;
+      }
       return `${catLine(v)}${qHtml(v.q)}
         <div class="sub">Verzin een geloofwaardig nep-antwoord. Hoe meer mensen erin trappen, hoe beter.</div>
         ${v.rejected ? '<div class="card" style="border-color:var(--pink)">😱 Dat is het échte antwoord! Verzin iets anders.</div>' : ''}
@@ -268,8 +275,8 @@
     },
     bluffvote(v) {
       if (v.answered) return waitBox('Stem binnen!', `Jij denkt: <b>${esc(v.options[v.myAnswer].text)}</b>`);
-      return `${qHtml(v.q)}<div class="sub">Welke is echt?</div>
-        <div class="choices">${v.options.map((o, i) => `<button class="ch ${o.mine ? 'mine' : ''}" data-i="${i}" ${o.mine ? 'disabled' : ''}><span class="l">${LETTERS[i]}</span><span>${esc(o.text)}</span>${o.mine ? '<small class="sub" style="margin-left:auto">jouw bluf</small>' : ''}</button>`).join('')}</div>`;
+      return `${qHtml(v.q)}<div class="sub">${esc(v.voteSub || 'Welke is echt?')}</div>
+        <div class="choices">${v.options.map((o, i) => `<button class="ch ${o.mine ? 'mine' : ''}" data-i="${i}" ${o.mine ? 'disabled' : ''}><span class="l">${LETTERS[i]}</span><span>${esc(o.text)}</span>${o.mine ? `<small class="sub" style="margin-left:auto">${esc(v.mineLabel || 'jouw bluf')}</small>` : ''}</button>`).join('')}</div>`;
     },
     order(v) {
       if (v.answered) return waitBox('Volgorde binnen!', v.myAnswer.map((i, n) => `${n + 1}. ${esc(v.items[i])}`).join('<br>')) + foot(v);
@@ -364,6 +371,23 @@
         <div class="tools">${GN.WIDTHS.map((w, i) => `<button class="sw-w" data-wd="${i}"><i style="width:${6 + i * 6}px;height:${6 + i * 6}px"></i></button>`).join('')}
           <button class="cta ghost small" id="undo">↶ Terug</button><button class="cta ghost small" id="clear">Wissen</button></div>
         <button class="cta" id="send">Klaar ✓</button>`;
+    },
+    ivwrite(v) {
+      if (v.answered) return waitBox('Woorden ingeleverd 📝', v.myAnswer.map((w, i) => `${esc(v.labels[i])}: <b>${esc(w)}</b>`).join('<br>') + '<br><br>Kijk straks naar de TV!');
+      ui.iv = ui.iv || v.labels.map(() => '');
+      return `<div class="catline">📝 Invulverhaal · je weet niet waar het over gaat 😈</div>
+        <div class="q">Vul in:</div>
+        ${v.labels.map((l, i) => `<div class="label">${esc(l)}</div><input class="field" id="iv${i}" maxlength="40" autocomplete="off" value="${esc(ui.iv[i])}">`).join('')}
+        <button class="cta" id="send" disabled>Insturen</button>`;
+    },
+    ktwrite(v) {
+      if (v.answered) return waitBox('Zin ingeleverd 📜', `<b>"${esc(v.myAnswer)}"</b><br>Wacht op de anderen.`);
+      return `<div class="catline">📜 Verhalenketting · zin ${v.turn + 1} van ${v.T}</div>
+        <div class="sub">${v.first ? 'Zo begint het verhaal:' : 'De vorige zin (meer zie je niet):'}</div>
+        <div class="card ktprev">“${esc(v.prev)}”</div>
+        <div class="q" style="font-size:20px">${v.last ? 'Schrijf het einde van het verhaal!' : 'Schrijf de volgende zin'}</div>
+        <textarea class="field" id="txt" maxlength="140" rows="3" autocomplete="off" placeholder="En toen…"></textarea>
+        <button class="cta" id="send" disabled>Insturen</button>`;
     },
     lgwrite(v) {
       if (v.answered) {
@@ -470,6 +494,25 @@
         const send = () => { if (inp.value.trim()) act('answer', { v: inp.value.trim() }); };
         on('#send', send);
         inp.onkeydown = (e) => { if (e.key === 'Enter') send(); };
+        break;
+      }
+      case 'ivwrite': {
+        const ok = () => { const b = $('#send'); if (b) b.disabled = !ui.iv.every((x) => x.trim()); };
+        v.labels.forEach((_, i) => {
+          const inp = $('#iv' + i);
+          if (!inp) return;
+          inp.oninput = () => { ui.iv[i] = inp.value; ok(); };
+          inp.onkeydown = (e) => { if (e.key === 'Enter') { const nx = $('#iv' + (i + 1)); if (nx) nx.focus(); else if (!$('#send').disabled) $('#send').click(); } };
+        });
+        on('#send', () => act('answer', { v: ui.iv.map((x) => x.trim()) }));
+        ok();
+        break;
+      }
+      case 'ktwrite': {
+        const inp = $('#txt');
+        if (!inp) break;
+        inp.oninput = () => ($('#send').disabled = !inp.value.trim());
+        on('#send', () => { if (inp.value.trim()) act('answer', { v: inp.value.trim() }); });
         break;
       }
       case 'lgwrite': {

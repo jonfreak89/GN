@@ -290,3 +290,20 @@ body.tv { overflow: hidden; }
 .rollchip .av, .move .av { font-size: 1.4em; }
 .move small { display: block; color: var(--amber); margin-top: 0.2em; font-size: 0.85em; }
 .pchip .bpos { font-size: 0.85em; color: var(--mint); font-weight: 700; }
+
+/* ---------- Verhalen ---------- */
+.story { max-width: 52em; margin: 0 auto; background: var(--ink-2); border: 2px solid var(--line); border-radius: var(--radius); padding: 1.2em 1.6em; font-size: 1.75em; line-height: 1.55; text-wrap: pretty; }
+.story mark { background: color-mix(in srgb, var(--c) 28%, transparent); color: var(--text); border-bottom: 3px solid var(--c); border-radius: 6px; padding: 0 0.25em; font-weight: 700; }
+.story mark.top { background: var(--c); color: var(--ink); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 40%, transparent); }
+.story sup { font-size: 0.55em; margin-left: 0.2em; }
+.story.kt p { margin: 0 0 0.45em; display: flex; gap: 0.6em; align-items: baseline; }
+.story.kt p.op { color: var(--amber); font-style: italic; }
+.story.kt .l { flex: none; font-family: var(--display); font-weight: 800; color: var(--sky); width: 1.2em; }
+.story.kt .by { flex: none; width: 1.6em; height: 1.6em; border-radius: 50%; display: grid; place-items: center; background: var(--c); font-size: 0.8em; align-self: center; }
+.story.kt p.top { color: var(--mint); font-weight: 700; }
+.ktdots { display: flex; gap: 0.6em; justify-content: center; margin: 0.6em 0 1em; }
+.ktdots i { width: 1.2em; height: 1.2em; border-radius: 50%; background: var(--ink-3); }
+.ktdots i.done { background: var(--mint); }
+.ktdots i.now { background: var(--amber); animation: pop 0.8s infinite alternate; }
+.opts.tight .opt { font-size: 1.35em; min-height: 2.6em; padding: 0.6em 1em; }
+.qtext.storyq { font-size: 2.2em; max-width: 30em; }

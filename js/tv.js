@@ -273,6 +273,9 @@
     else if (v.kind === 'hl') say(`${v.b.n}: ${v.set.hi.toLowerCase()} of ${v.set.lo.toLowerCase()} dan ${v.a.n}?`);
     else if (v.kind === 'reveal' && v.reveal.options && v.reveal.correct !== undefined && v.reveal.of !== 'ken') say('Het juiste antwoord is: ' + v.reveal.options[v.reveal.correct]);
     else if (v.kind === 'reveal' && v.reveal.of === 'num') say('Het antwoord is ' + v.reveal.q.answer);
+    else if (v.kind === 'ivVote') say(v.title + '. ' + storyPlain(v.parts, v.fills));
+    else if (v.kind === 'ktVote') say(v.opener + ' ' + v.lines.map((l) => l.text).join(' '));
+    else if (v.kind === 'bluffWrite' && v.story) say(v.q.q);
     else if (v.kind === 'lgWrite') say('Schrijf twee waarheden en een leugen over jezelf.');
     else if (v.kind === 'lgGuess') { const a = v.players.find((p) => p.id === v.author); say(`Welke van ${a ? a.name : 'deze'} is gelogen?`); }
     else if (v.kind === 'top5') say(v.text);
@@ -346,6 +349,17 @@
     return gm ? `👑 <b>${esc(gm.name)}</b> is spelleider en start het spel.` : '';
   };
 
+  const ECHT_TAG = '<span class="cat">📰 Waargebeurd</span>';
+  // invulverhaal: tekst met ingevulde woorden
+  const storyHtml = (parts, fills, opts = {}) => parts.map((x) => {
+    if (typeof x === 'string') return esc(x);
+    const f = fills[x.b] || { text: '?' };
+    const p = opts.m && f.author ? opts.m[f.author] : null;
+    const top = opts.top && opts.top.includes(x.b);
+    return `<mark class="${top ? 'top' : ''}" style="--c:${p ? p.color : 'var(--amber)'}">${esc(f.text)}${opts.counts && opts.counts[x.b] ? `<sup>${opts.counts[x.b]}</sup>` : ''}</mark>`;
+  }).join('');
+  const storyPlain = (parts, fills) => parts.map((x) => (typeof x === 'string' ? x : (fills[x.b] || {}).text || '')).join('');
+
   const VIEWS = {
     lobby: (v) => `
       <div class="lobby rise">
@@ -409,15 +423,15 @@
       ${waitLine(v)}</div>`;
     },
 
-    bluffWrite: (v) => `<div class="panel center">${head(v)}
-      <div class="${qClass(v.q.q)} pop">${fmtQ(v.q.q)}</div>
-      <div class="qsub">🤥 Verzin een geloofwaardig nep-antwoord op je telefoon</div>
+    bluffWrite: (v) => `<div class="panel center">${head(v, v.story ? ECHT_TAG : '')}
+      <div class="${v.story ? 'qtext long storyq' : qClass(v.q.q)} pop">${fmtQ(v.q.q)}</div>
+      <div class="qsub">${v.story ? '📰 Waargebeurd! Verzin op je telefoon hoe het afliep' : '🤥 Verzin een geloofwaardig nep-antwoord op je telefoon'}</div>
       ${waitLine(v)}</div>`,
 
-    bluffVote: (v) => `<div class="panel">${head(v)}
-      <div class="${qClass(v.q.q)}" style="font-size:2.3em">${fmtQ(v.q.q)}</div>
-      <div class="opts">${v.options.map((o, i) => `<div class="opt pop" style="animation-delay:${i * 0.1}s"><span class="l">${LETTERS[i]}</span>${esc(o)}</div>`).join('')}</div>
-      <div class="qsub" style="margin-top:1em">Welke is echt? 🔍</div>
+    bluffVote: (v) => `<div class="panel">${head(v, v.story ? ECHT_TAG : '')}
+      <div class="${qClass(v.q.q)}" style="font-size:${v.story ? 1.8 : 2.3}em">${fmtQ(v.q.q)}</div>
+      <div class="opts ${v.story ? 'one tight' : ''}">${v.options.map((o, i) => `<div class="opt pop" style="animation-delay:${i * 0.1}s"><span class="l">${LETTERS[i]}</span>${esc(o)}</div>`).join('')}</div>
+      <div class="qsub" style="margin-top:1em">${v.story ? 'Hoe liep het écht af? 🔍' : 'Welke is echt? 🔍'}</div>
       ${waitLine(v)}</div>`,
 
     order: (v) => `<div class="panel">${head(v)}
@@ -571,6 +585,33 @@
       </div></div>`;
     },
 
+    ivWrite: (v) => `<div class="intro center">
+      <div class="big">📝</div>
+      <div class="rno">Invulverhaal</div>
+      <h2 class="pop">Vul de woorden in…</h2>
+      <p class="rise">Iedereen krijgt op zijn telefoon een paar soorten woorden. Waar het verhaal over gaat? Dat hoor je straks 😈</p>
+      ${waitLine(v)}</div>`,
+
+    ivVote: (v) => `<div class="panel">
+      <div class="qhead"><span class="cat">📝 ${esc(v.title)}</span></div>
+      <div class="story pop">${storyHtml(v.parts, v.fills)}</div>
+      <div class="qsub" style="margin-top:.8em">Stem op je telefoon op het grappigste woord</div>
+      ${waitLine(v)}</div>`,
+
+    ktWrite: (v) => `<div class="intro center">
+      <div class="big">📜</div>
+      <div class="rno">Verhalenketting · zin ${v.turn + 1} van ${v.T}</div>
+      <h2 class="pop">${v.turn === 0 ? 'Het verhaal begint…' : v.last ? 'Schrijf het einde!' : 'En toen…?'}</h2>
+      <p class="rise">Je ziet alleen de zin hiervoor. Er lopen ${v.stotal} verhalen tegelijk rond.</p>
+      <div class="ktdots">${Array.from({ length: v.T }, (_, i) => `<i class="${i < v.turn ? 'done' : i === v.turn ? 'now' : ''}"></i>`).join('')}</div>
+      ${waitLine(v)}</div>`,
+
+    ktVote: (v) => `<div class="panel">
+      <div class="qhead"><span class="cat">📜 Verhaal ${v.sno} van ${v.stotal}</span></div>
+      <div class="story kt pop"><p class="op">${esc(v.opener)}</p>${v.lines.map((l, i) => `<p class="rise" style="animation-delay:${0.4 + i * 0.5}s"><span class="l">${LETTERS[i]}</span>${esc(l.text)}</p>`).join('')}</div>
+      <div class="qsub" style="margin-top:.6em">Stem op je telefoon op de beste zin</div>
+      ${waitLine(v)}</div>`,
+
     reveal: (v) => REVEALS[v.reveal.of](v, v.reveal),
 
     scores: (v) => {
@@ -622,6 +663,23 @@
   const PUZC = ['#3ddc97', '#4cc9f0', '#ffb627'];
 
   const REVEALS = {
+    iv: (v, r) => {
+      const m = pmap(v);
+      const win = r.top.map((i) => r.fills[i]).filter((f) => f && f.author && m[f.author]);
+      return `<div class="panel">
+        <div class="qhead"><span class="cat">📝 ${esc(r.title)}</span></div>
+        <div class="story">${storyHtml(r.parts, r.fills, { m, top: r.top, counts: r.counts })}</div>
+        <div class="bonus">${win.length ? `🏆 Grappigste woord: ${win.map((f) => `<b>“${esc(f.text)}”</b> van ${m[f.author].avatar} ${esc(m[f.author].name)}`).join(' en ')}` : '😶 Geen stemmen'}</div></div>`;
+    },
+    kt: (v, r) => {
+      const m = pmap(v);
+      return `<div class="panel">
+        <div class="qhead"><span class="cat">📜 Verhaal ${r.sno} van ${r.stotal}</span></div>
+        <div class="story kt"><p class="op">${esc(r.opener)}</p>${r.lines.map((l, i) => {
+          const p = l.author ? m[l.author] : null;
+          return `<p class="${r.top.includes(i) ? 'top' : ''}"><span class="by" style="--c:${p ? p.color : '#555'}">${p ? p.avatar : '🤖'}</span>${esc(l.text)}${r.counts[i] ? ` <sup>${'⭐'.repeat(Math.min(r.counts[i], 5))}</sup>` : ''}</p>`;
+        }).join('')}</div></div>`;
+    },
     lg: (v, r) => {
       const m = pmap(v);
       const a = m[r.author];
@@ -730,9 +788,9 @@
     bluff: (v, r) => {
       const m = pmap(v);
       const vot = (i) => Object.keys(r.votes).filter((id) => r.votes[id] === i);
-      return `<div class="panel">${head(v)}
-        <div class="${qClass(r.q.q)}" style="font-size:2.2em">${fmtQ(r.q.q)}</div>
-        <div class="opts">${r.options.map((o, i) => `<div class="opt ${i === r.truth ? 'right' : ''}" style="flex-wrap:wrap">
+      return `<div class="panel">${head(v, r.story ? ECHT_TAG : '')}
+        <div class="${qClass(r.q.q)}" style="font-size:${r.story ? 1.6 : 2.2}em">${fmtQ(r.q.q)}</div>
+        <div class="opts ${r.story ? 'one tight' : ''}">${r.options.map((o, i) => `<div class="opt ${i === r.truth ? 'right' : ''}" style="flex-wrap:wrap">
           ${i === r.truth ? '<span class="tag" style="background:var(--mint);color:var(--ink)">ECHT</span>' : o.authors.length ? `<span class="tag">nep van ${o.authors.map((a) => esc(m[a] ? m[a].name : '?')).join(' & ')}</span>` : '<span class="tag" style="background:var(--ink-3)">nep van de quizmaster</span>'}
           <span class="l">${LETTERS[i]}</span>${esc(o.text)}${voters(vot(i), m)}</div>`).join('')}</div>
         ${factBox(r.q)}</div>`;

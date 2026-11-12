@@ -46,8 +46,8 @@ body.ph { min-height: 100dvh; overscroll-behavior: none; -webkit-tap-highlight-c
 .row { display: flex; gap: 8px; }
 .row > * { flex: 1; }
 
-input.field { width: 100%; background: var(--ink-2); border: 2px solid var(--line); border-radius: 16px; color: var(--text); font: inherit; font-size: 22px; padding: 14px 16px; outline: none; }
-input.field:focus { border-color: var(--amber); }
+input.field, textarea.field { width: 100%; background: var(--ink-2); border: 2px solid var(--line); border-radius: 16px; color: var(--text); font: inherit; font-size: 22px; padding: 14px 16px; outline: none; }
+input.field:focus, textarea.field:focus { border-color: var(--amber); }
 input.code { text-transform: uppercase; letter-spacing: 0.3em; text-align: center; font-family: var(--display); font-weight: 800; font-size: 34px; }
 .preview { color: var(--muted); text-align: center; min-height: 20px; }
 
@@ -162,3 +162,7 @@ input[type=range] { width: 100%; accent-color: var(--amber); height: 40px; }
 @keyframes shake { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-18deg) scale(1.05); } 40% { transform: rotate(14deg); } 60% { transform: rotate(-10deg); } 80% { transform: rotate(6deg); } }
 .dice { text-align: center; font-size: 140px; line-height: 1; margin-top: 10px; color: var(--amber); }
 .dice.show { animation: pop 0.5s both; }
+
+/* verhalen */
+textarea.field { resize: none; font-size: 17px; line-height: 1.4; }
+.ktprev { font-style: italic; font-size: 18px; border-color: var(--amber); }
