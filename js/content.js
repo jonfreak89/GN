@@ -14,6 +14,12 @@
     { id: 'dieren', name: 'Dieren', emoji: '🦒', group: 'Kennis', spice: 1 },
     { id: 'eten', name: 'Eten, drinken & bier', emoji: '🍺', group: 'Kennis', spice: 1 },
     { id: 'film', name: 'Films & series', emoji: '🎬', group: 'Kennis', spice: 1 },
+    { id: 'games', name: 'Games', emoji: '🎮', group: 'Kennis', spice: 1 },
+    { id: 'muziek', name: 'Muziek', emoji: '🎵', group: 'Kennis', spice: 1 },
+    // Nostalgie
+    { id: 'jaren', name: 'Jaren 80, 90 & 00', emoji: '📼', group: 'Nostalgie', spice: 1 },
+    { id: 'kindertv', name: 'Kinder-tv van vroeger', emoji: '📺', group: 'Nostalgie', spice: 1 },
+    { id: 'reclames', name: 'Oude reclames & producten', emoji: '🛒', group: 'Nostalgie', spice: 1 },
     // Grappig & raar
     { id: 'weetjes', name: 'Rare weetjes', emoji: '🤯', group: 'Grappig & raar', spice: 1 },
     { id: 'echtgebeurd', name: 'Echt gebeurd', emoji: '📰', group: 'Grappig & raar', spice: 1 },
@@ -27,6 +33,9 @@
     { id: 'rampen', name: 'Rampen & blunders', emoji: '🔥', group: 'Donker', spice: 2 },
     { id: 'truecrime', name: 'True crime light', emoji: '🔪', group: 'Donker', spice: 2 },
     { id: 'laatstewoorden', name: 'Laatste woorden', emoji: '🕯️', group: 'Donker', spice: 2 },
+    { id: 'hoaxes', name: 'Hoaxes & complotten', emoji: '🛸', group: 'Donker', spice: 2 },
+    { id: 'spook', name: 'Spookverhalen & urban legends', emoji: '👻', group: 'Donker', spice: 2 },
+    { id: 'schandalen', name: 'Beruchte schandalen', emoji: '🗞️', group: 'Donker', spice: 2 },
     // Stout
     { id: 'lichaam', name: 'Het lichaam', emoji: '🍑', group: 'Stout', spice: 3 },
     { id: 'liefde', name: 'Liefde & seks', emoji: '🌶️', group: 'Stout', spice: 3 },

@@ -151,6 +151,24 @@
     if (!s) return null;
     return { id: idOf('g:film', s, (f) => f.key), type: 'order', q: 'Zet deze films op jaar van verschijnen', lo: 'Oudst', hi: 'Nieuwst', items: s.map((f) => [f.t, f.y, String(f.y)]) };
   });
+  // ---------- Waar of nep: afgeleid van bluf-vragen ----------
+  // Een stelling met het echte antwoord (waar) of een nep-antwoord (nep).
+  // Deelt het "gezien"-geheugen met de bluf-vraag, zodat die niet verklapt wordt.
+  GN.CATEGORIES.forEach((c) => {
+    const pool = GN.QUESTIONS.filter((q) => q.type === 'bluff' && q.cat === c.id);
+    if (!pool.length) return;
+    GN.addGenerator(c.id, 'tf', (rand) => {
+      const b = pick(rand, pool);
+      const truth = rand() < 0.5;
+      const fill = truth ? b.answer : pick(rand, b.decoys);
+      return {
+        id: 'tfb:' + b.id + ':' + GN.hash(fill), base: b.id, type: 'tf', spice: b.spice,
+        q: b.q.replace(/_{2,}/, fill), a: truth,
+        fact: truth ? b.fact : `Nep! Het juiste antwoord: ${b.answer}.` + (b.fact ? ' ' + b.fact : ''),
+      };
+    });
+  });
+
   GN.addGenerator('film', 'num', (rand) => {
     const f = pick(rand, F);
     return { id: 'g:fy:' + f.key, type: 'num', q: `In welk jaar kwam "${f.t}" uit?`, answer: f.y };

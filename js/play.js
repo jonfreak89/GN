@@ -110,11 +110,18 @@
     const me = view.me;
     bar.innerHTML = `<div class="me"><span class="av" style="--c:${me.color}">${me.avatar}</span>
       <div style="min-width:0"><div class="nm">${esc(me.name)}${me.isGm ? ' 👑' : ''}</div>
-      <div><span class="sc">${me.score}</span> <span class="rank">${me.playing && view.kind !== 'lobby' && me.rank ? `· ${me.rank}e plaats` : ''}${me.powerups && me.powerups.length ? ` · ${me.powerups.map((p) => GN.POWERUPS[p].emoji).join(' ')}` : ''}</span></div></div></div>
+      <div>${teamBadge()}<span class="sc">${me.score}</span> <span class="rank">${me.playing && view.kind !== 'lobby' && me.rank ? `· ${me.rank}e plaats` : ''}${me.powerups && me.powerups.length ? ` · ${me.powerups.map((p) => GN.POWERUPS[p].emoji).join(' ')}` : ''}</span></div></div></div>
       ${me.isGm && view.kind !== 'lobby' ? '<button class="iconbtn" id="gmbtn" aria-label="Spelleider">👑</button>' : ''}`;
     const g = $('#gmbtn');
     if (g) g.onclick = () => { sheet = 'gm'; renderSheet(); };
   }
+
+  function teamBadge() {
+    if (!view.teams || view.me.team == null) return '';
+    const t = view.teams.find((x) => x.id === view.me.team);
+    return t ? `<span class="tbadge" style="--t:${t.color}">${t.emoji} ${t.score}</span> ` : '';
+  }
+  const teamPicker = (v) => (v.teams && v.me.playing ? `<div class="card"><div class="label">Jouw team</div><div class="seg" id="teampick">${v.teams.map((t) => `<button data-team="${t.id}" class="${v.me.team === t.id ? 'on' : ''}" style="--t:${t.color}"><b>${t.emoji}</b>${esc(t.name.replace('Team ', ''))}<br><small>${t.size} speler${t.size === 1 ? '' : 's'}</small></button>`).join('')}</div></div>` : '');
 
   // ---------- eerste keer: code, naam, avatar ----------
   function renderSetup() {
@@ -179,7 +186,8 @@
         return `<div class="big" style="font-size:96px">${me.avatar}</div>
           <div class="title">Je bent binnen!</div>
           <p class="sub center">${gm ? `👑 ${esc(gm.name)} start het spel` : 'Wachten op de spelleider'}<span class="waitdots"></span></p>
-          <div class="card"><div class="label">Spelers (${v.players.length})</div><div class="mylist">${v.players.map((p) => `<span>${p.avatar} ${esc(p.name)}</span>`).join('')}</div></div>
+          ${teamPicker(v)}
+          <div class="card"><div class="label">Spelers (${v.players.length})</div><div class="mylist">${v.players.map((p) => `<span>${p.team != null && v.teams ? v.teams[p.team].emoji + ' ' : ''}${p.avatar} ${esc(p.name)}</span>`).join('')}</div></div>
           <button class="cta ghost" id="editp">Naam of avatar aanpassen</button>`;
       }
       const s = v.settings;
@@ -187,6 +195,10 @@
         <div class="card"><div class="label">Spice level</div><div class="seg" id="spice">${v.spiceList.map((x) => `<button data-v="${x.id}" class="${s.spice === x.id ? 'on' : ''}"><b>${x.emoji}</b>${x.name}</button>`).join('')}</div>
         <p class="sub" style="font-size:13px;margin:8px 0 0">${esc(GN.SPICE[s.spice].desc)}${s.spice === 3 ? ' · stoute vragen kun je anoniem overslaan' : ''}</p></div>
         <div class="card"><div class="label">Lengte</div><div class="seg" id="len">${Object.keys(v.lengths).map((k) => `<button data-v="${k}" class="${s.length === k ? 'on' : ''}"><b>${{ kort: '⚡', normaal: '🎲', lang: '🌙' }[k]}</b>${k}<br><small>${v.lengths[k]}</small></button>`).join('')}</div></div>
+        <div class="card"><div class="label">Teams</div><div class="seg" id="teams">${[[0, '🙋', 'Ieder voor zich'], [2, '⚔️', '2 teams'], [3, '🔱', '3 teams']].map(([n, e, t]) => `<button data-v="${n}" class="${(s.teams || 0) === n ? 'on' : ''}"><b>${e}</b>${t}</button>`).join('')}</div>
+          ${s.teams ? '<button class="cta ghost small" id="shuffle" style="margin-top:8px">🎲 Teams eerlijk husselen</button>' : ''}</div>
+        ${teamPicker(v)}
+        <div class="card"><div class="label">Rondes (tik om aan of uit te zetten)</div><div class="rounds">${v.roundList.map((r) => `<button data-round="${r.id}" class="${s.rounds && s.rounds[r.id] === false ? '' : 'on'}">${r.emoji} ${esc(r.title)}</button>`).join('')}<button class="on" disabled>💰 De Finale</button></div></div>
         <div class="card">
           <div class="toggle"><span>Ik speel zelf mee</span><button class="sw ${s.gmPlays ? 'on' : ''}" id="gmplays" aria-label="Meespelen"></button></div>
           <div class="toggle"><span>TV leest vragen voor 🔊</span><button class="sw ${s.voice ? 'on' : ''}" id="voice" aria-label="Voorlezen"></button></div>
@@ -207,6 +219,11 @@
         <div class="choices">${v.options.map((c) => `<button class="ch" data-cat="${c.id}" style="font-size:20px"><span style="font-size:32px">${c.emoji}</span><span>${esc(c.name)}<br><small class="sub">${esc(c.group)}</small></span></button>`).join('')}</div>`;
     },
     choice(v) {
+      if (v.tf) {
+        if (v.answered) return waitBox('Antwoord binnen!', `Jij zegt: <b>${v.myAnswer === 0 ? '✅ Waar' : '❌ Nep'}</b>`) + foot(v);
+        return `${catLine(v)}<div class="catline">🕵️ Waar of nep?</div>${qHtml(v.q)}
+          <div class="tfbtns"><button class="ch tfw" data-i="0">✅<b>Waar</b></button><button class="ch tfn" data-i="1">❌<b>Nep</b></button></div>${foot(v)}`;
+      }
       if (v.answered) return waitBox('Antwoord binnen!', `Je koos <b>${LETTERS[v.myAnswer]}: ${esc(v.options[v.myAnswer])}</b>`) + foot(v);
       return `${catLine(v)}${v.isHot ? '<div class="catline">🔥 Jij zit in de hete stoel</div>' : ''}${qHtml(v.q)}${v.sub ? `<div class="sub">${esc(v.sub)}</div>` : ''}${optionButtons(v.options, v.hidden)}${foot(v)}`;
     },
@@ -223,6 +240,13 @@
         <div class="choices">${v.guesses.map((g, i) => `<button class="ch" data-i="${i}"><span class="l" style="background:var(--violet)">🎲</span><span style="font-family:var(--display);font-weight:800;font-size:22px">${GN.fmtNum(g.v)}</span>${g.mine ? '<small class="sub" style="margin-left:auto">jouw schatting</small>' : ''}</button>`).join('')}</div>`;
     },
     write(v) {
+      if (v.wz) {
+        if (v.answered) return waitBox('Anoniem ingeleverd 🤫', `<b>"${esc(v.myAnswer)}"</b><br>Straks moet iedereen raden dat dit van jou is.`);
+        return `<div class="catline">🗯️ Wie zei dit? · anoniem</div>${qHtml(v.q)}
+          <div class="sub">Schrijf iets grappigs of eerlijks. Tip: schrijf als iemand anders om ze op het verkeerde been te zetten.</div>
+          <input class="field" id="txt" maxlength="80" autocomplete="off" placeholder="Jouw antwoord">
+          <button class="cta" id="send" disabled>Insturen</button>${foot(v)}`;
+      }
       if (v.answered) return waitBox('Bluf ingeleverd 😏', `<b>"${esc(v.myAnswer)}"</b>`);
       return `${catLine(v)}${qHtml(v.q)}
         <div class="sub">Verzin een geloofwaardig nep-antwoord. Hoe meer mensen erin trappen, hoe beter.</div>
@@ -248,6 +272,8 @@
         const t = v.players.find((p) => p.id === v.myAnswer);
         return waitBox('Stem binnen!', t ? `Jij wees naar <b>${t.avatar} ${esc(t.name)}</b>` : '');
       }
+      if (v.wzq) return `<div class="catline">🗯️ ${esc(v.wzq)}</div><div class="q" style="color:var(--amber)">${esc(v.q)}</div><div class="sub">${esc(v.sub)}</div>
+        <div class="vote">${v.players.map((p) => `<button data-p="${p.id}" style="--c:${p.color}"><span class="av">${p.avatar}</span><b>${esc(p.name)}</b></button>`).join('')}</div>`;
       return `<div class="catline">🫵 Wie van ons…</div>${qHtml(v.q)}${v.skippable ? foot(v) : ''}
         <div class="vote">${v.players.map((p) => `<button data-p="${p.id}" style="--c:${p.color}"><span class="av">${p.avatar}</span><b>${esc(p.name)}</b></button>`).join('')}</div>`;
     },
@@ -274,7 +300,8 @@
     },
     end(v) {
       const medal = ['🥇', '🥈', '🥉'][v.rank - 1] || '🎈';
-      return `<div class="big">${medal}</div><div class="title">${v.rank ? `${v.rank}e plaats` : 'Klaar!'}</div><p class="center">${v.me.score} punten</p>
+      const team = v.teamRank && v.teams ? v.teams.find((t) => t.id === v.me.team) : null;
+      return `<div class="big">${team && v.teamRank === 1 ? '🏆' : medal}</div><div class="title">${team ? (v.teamRank === 1 ? `${team.emoji} Jullie winnen!` : `${team.emoji} Team ${v.teamRank}e`) : v.rank ? `${v.rank}e plaats` : 'Klaar!'}</div><p class="center">${team ? `Jij werd ${v.rank}e met ` : ''}${v.me.score} punten</p>
         ${v.awards.map((a) => `<div class="awardline">${a.emoji} <b>${esc(a.title)}</b><br><small class="sub">${esc(a.text)}</small></div>`).join('')}
         ${v.me.isGm ? '<button class="cta" id="again">Nog een keer! 🔁</button><button class="cta ghost" id="tolobby">Terug naar lobby</button>' : '<p class="sub center">De spelleider beslist of er nog een potje komt</p>'}`;
     },
@@ -284,7 +311,7 @@
   };
 
   function playerRows(v) {
-    return v.players.map((p) => `<div class="prow"><span class="av" style="--c:${p.color}">${p.avatar}</span><span class="nm">${esc(p.name)}${p.gm ? ' 👑' : ''}${p.playing ? '' : ' <small class="sub">(presenteert)</small>'} ${p.connected || p.isBot ? '' : '<span class="off">weg</span>'}</span>
+    return v.players.map((p) => `<div class="prow"><span class="av" style="--c:${p.color}">${p.avatar}</span><span class="nm">${p.team != null && view && view.teams && view.teams[p.team] ? view.teams[p.team].emoji + ' ' : ''}${esc(p.name)}${p.gm ? ' 👑' : ''}${p.playing ? '' : ' <small class="sub">(presenteert)</small>'} ${p.connected || p.isBot ? '' : '<span class="off">weg</span>'}</span>
       ${!p.gm && !p.isBot ? `<button data-gmto="${p.id}">👑</button>` : ''}${!p.gm ? `<button data-kick="${p.id}">✕</button>` : ''}</div>`).join('');
   }
   function gmControls(v) {
@@ -309,12 +336,16 @@
     wireGmPlayers(screen);
     switch (v.screen) {
       case 'lobby':
+        screen.querySelectorAll('#teampick button').forEach((b) => (b.onclick = () => act('team', { team: +b.dataset.team })));
         if (!v.me.isGm) break;
         screen.querySelectorAll('#spice button').forEach((b) => (b.onclick = () => act('gm:settings', { settings: { spice: +b.dataset.v } })));
         screen.querySelectorAll('#len button').forEach((b) => (b.onclick = () => act('gm:settings', { settings: { length: b.dataset.v } })));
         on('#gmplays', () => act('gm:settings', { settings: { gmPlays: !v.settings.gmPlays } }));
         on('#voice', () => act('gm:settings', { settings: { voice: !v.settings.voice } }));
         on('#addbot', () => act('gm:addbot'));
+        on('#shuffle', () => act('gm:shuffle'));
+        screen.querySelectorAll('#teams button').forEach((b) => (b.onclick = () => act('gm:settings', { settings: { teams: +b.dataset.v } })));
+        screen.querySelectorAll('[data-round]').forEach((b) => (b.onclick = () => act('gm:settings', { settings: { rounds: { [b.dataset.round]: !b.classList.contains('on') } } })));
         on('#start', () => act('gm:start'));
         on('#clearseen', () => { if (confirm('Alle vragen weer als nieuw markeren?')) act('gm:clearseen'); });
         break;

@@ -20,13 +20,17 @@ Na een minuutje staat het op `https://jonfreak89.github.io/GN/`.
 | Ronde | Hoe het werkt |
 |---|---|
 | Meerkeuze | Iedereen kiest tegelijk, snelheid telt niet |
+| Waar of nep? | Klopt de stelling of is het onzin? Snelle ronde |
 | Schatten & Wedden | Getal schatten, daarna wedden op de schatting die het dichtst zit |
 | Bluffen | Verzin een nep-antwoord, zoek het echte, scoor op wie je erin luist |
 | Op volgorde | Vier dingen in de juiste volgorde zetten |
 | Hoe goed ken je elkaar? | Hete stoel, "Wie van ons…" en anonieme gênante enquêtes |
+| Wie zei dit? | Iedereen schrijft anoniem een antwoord, daarna raad je wie wat schreef |
 | Finale | Zet in wat je durft op één laatste vraag |
 
 Extra's: de laatste plaats kiest de categorie, power-ups (Dubbel, 50/50, Stelen, Sabotage, Schild), troost-power-up voor de laatste na elke ronde, awards aan het eind, anonieme overslaan-knop bij 18+ vragen.
+
+**Teams:** ieder voor zich, 2 of 3 teams (Patat, Tulp, Kaas). Spelers kiezen hun team op hun telefoon of de spelleider husselt. Kleinere teams krijgen een eerlijke bonus. De spelleider kan ook per ronde kiezen of die meedoet.
 
 **Spice levels:** 😇 Braaf (kennis en rare weetjes) · 😈 Pittig (+ donkere humor) · 🌶️ Stout (+ 18+).
 

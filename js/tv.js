@@ -194,8 +194,9 @@
     if (v.stepId === lastSpoken) return;
     lastSpoken = v.stepId;
     if (v.kind === 'intro') say(v.title);
-    else if (['mc', 'num', 'bluffWrite', 'order', 'final'].includes(v.kind) && v.q) say(v.q.q);
-    else if (v.kind === 'ken' || v.kind === 'wie' || v.kind === 'poll') say(v.text);
+    else if (['mc', 'tf', 'num', 'bluffWrite', 'order', 'final'].includes(v.kind) && v.q) say(v.q.q);
+    else if (v.kind === 'ken' || v.kind === 'wie' || v.kind === 'poll' || v.kind === 'wzWrite') say(v.text);
+    else if (v.kind === 'wzGuess') say('Wie zei dit? ' + v.entry);
     else if (v.kind === 'reveal' && v.reveal.options && v.reveal.correct !== undefined && v.reveal.of !== 'ken') say('Het juiste antwoord is: ' + v.reveal.options[v.reveal.correct]);
     else if (v.kind === 'reveal' && v.reveal.of === 'num') say('Het antwoord is ' + v.reveal.q.answer);
   }
@@ -216,14 +217,17 @@
     const players = v.players.filter((p) => p.playing);
     const gains = v.kind === 'reveal' ? v.reveal.gains || {} : {};
     const need = new Set(v.need);
-    const html = players.map((p) => {
+    const chip = (p) => {
       const done = need.has(p.id) && v.answered.includes(p.id);
       const g = gains[p.id];
       return `<div class="pchip ${done ? 'done' : ''} ${p.connected || p.isBot ? '' : 'off'}" style="--c:${p.color}">
         ${p.gm ? '<span class="crown">👑</span>' : ''}${v.powerupsUsed.includes(p.id) ? '<span class="pu">⚡</span>' : ''}
         <span class="av">${p.avatar}</span><span class="nm">${esc(p.name)}</span>
         <span class="sc">${p.score}${g ? ` <small style="color:${g > 0 ? 'var(--mint)' : 'var(--bad)'}">${g > 0 ? '+' : ''}${g}</small>` : ''}</span></div>`;
-    }).join('');
+    };
+    const html = v.kind === 'end' ? '' : v.teams
+      ? v.teams.map((t) => `<div class="teamgroup" style="--t:${t.color}"><div class="teamhead">${t.emoji} ${esc(t.name)} <b>${t.score}</b></div><div class="teamchips">${players.filter((p) => p.team === t.id).map(chip).join('') || '<span class="sub">nog leeg</span>'}</div></div>`).join('')
+      : players.map(chip).join('');
     if (board.dataset.html !== html) { board.innerHTML = html; board.dataset.html = html; }
   }
 
@@ -249,7 +253,8 @@
   }
   const settingsChips = (v) => {
     const sp = GN.SPICE[v.settings.spice];
-    return `<span>${sp.emoji} ${sp.name}</span><span>⏱️ ${esc(v.settings.length)} (${GN.LENGTHS[v.settings.length]})</span>${v.settings.voice ? '<span>🔊 Voorlezen</span>' : ''}${!v.settings.gmPlays ? '<span>🎙️ Spelleider presenteert</span>' : ''}`;
+    const off = Object.keys(v.settings.rounds || {}).filter((k) => v.settings.rounds[k] === false).map((k) => GN.ROUNDS[k].title);
+    return `<span>${sp.emoji} ${sp.name}</span><span>⏱️ ${esc(v.settings.length)} (${GN.LENGTHS[v.settings.length]})</span>${v.settings.teams ? `<span>👥 ${v.settings.teams} teams</span>` : ''}${v.settings.voice ? '<span>🔊 Voorlezen</span>' : ''}${!v.settings.gmPlays ? '<span>🎙️ Spelleider presenteert</span>' : ''}${off.length ? `<span>🚫 Zonder: ${esc(off.join(', '))}</span>` : ''}`;
   };
   const lobbyHint = (v) => {
     const gm = v.players.find((p) => p.gm);
@@ -352,6 +357,24 @@
       <div class="wiegrid">${v.players.filter((p) => p.playing).map((p, i) => `<div class="wiecard rise" style="--c:${p.color};animation-delay:${i * 0.08}s"><div class="av">${p.avatar}</div><div class="nm">${esc(p.name)}</div></div>`).join('')}</div>
       ${waitLine(v)}</div>`,
 
+    tf: (v) => `<div class="panel">${head(v, '<span>🕵️ Waar of nep?</span>')}
+      <div class="${qClass(v.q.q)} pop">${fmtQ(v.q.q)}</div>
+      <div class="tfopts"><div class="tfo waar rise">✅ Waar</div><div class="tfo nep rise" style="animation-delay:.1s">❌ Nep</div></div>
+      ${waitLine(v)}</div>`,
+
+    wzWrite: (v) => `<div class="panel center">
+      <div class="qhead"><span class="cat">🗯️ Wie zei dit?</span></div>
+      <div class="${qClass(v.text)} pop">${esc(v.text)}</div>
+      <div class="qsub">✍️ Schrijf anoniem je antwoord op je telefoon. Straks raadt iedereen wie wat schreef.</div>
+      ${waitLine(v)}</div>`,
+
+    wzGuess: (v) => `<div class="panel center">
+      <div class="qhead"><span class="cat">🗯️ Wie zei dit?</span><span>${v.eno} van ${v.etotal}</span></div>
+      <div class="qsub" style="margin:0 0 .4em">${esc(v.text)}</div>
+      <div class="quote pop">“${esc(v.entry)}”</div>
+      <div class="wiegrid">${v.players.filter((p) => p.playing).map((p, i) => `<div class="wiecard rise" style="--c:${p.color};animation-delay:${i * 0.06}s"><div class="av">${p.avatar}</div><div class="nm">${esc(p.name)}</div></div>`).join('')}</div>
+      ${waitLine(v)}</div>`,
+
     poll: (v) => `<div class="panel center">
       <div class="qhead"><span class="cat">🙈 Gênante enquête</span></div>
       <div class="${qClass(v.text)} pop">${esc(v.text)}</div>
@@ -372,6 +395,7 @@
       const m = pmap(v);
       return `<div class="panel center">
         <div class="intro"><h2 style="font-size:3.2em;margin-bottom:.5em">Tussenstand 📊</h2></div>
+        ${v.teams ? `<div class="teamscores">${v.teams.slice().sort((a, b) => b.score - a.score).map((t, i) => `<div class="tscore pop" style="--t:${t.color};animation-delay:${i * 0.2}s"><span class="e">${t.emoji}</span><span>${esc(t.name)}</span><b>${t.score}</b></div>`).join('')}</div>` : ''}
         <div class="scoreboard">${ps.map((p, i) => `<div class="srow" style="--c:${p.color};animation-delay:${(ps.length - i) * 0.12}s"><span class="pos">${i + 1}</span><span class="av">${p.avatar}</span><span class="nm">${esc(p.name)}</span><span class="sc">${p.score}</span></div>`).join('')}</div>
         ${v.bonus && m[v.bonus.id] ? `<div class="bonus">${m[v.bonus.id].avatar} ${esc(m[v.bonus.id].name)} krijgt een troost-power-up: ${GN.POWERUPS[v.bonus.type].emoji} ${GN.POWERUPS[v.bonus.type].name}</div>` : ''}
         ${v.nextRound ? `<div class="note">Volgende ronde: <b>${esc(v.nextRound)}</b></div>` : ''}
@@ -383,8 +407,13 @@
       const r = v.ranking.map((id) => m[id]).filter(Boolean);
       const pod = [r[1], r[0], r[2]].map((p, i) => (p ? `<div class="pl p${[2, 1, 3][i]}" style="--c:${p.color}"><div class="av">${p.avatar}</div><div class="nm">${esc(p.name)}</div><div class="block">${p.score}</div></div>` : '')).join('');
       return `<div class="panel center">
-        <div class="intro"><div class="rno">Einde van de avond</div><h2 class="pop" style="font-size:3.6em">${r[0] ? `${esc(r[0].name)} wint! 🏆` : 'Klaar!'}</h2></div>
-        <div class="podium">${pod}</div>
+        ${(() => {
+          const tw = v.teamRanking && v.teams ? v.teams.find((t) => t.id === v.teamRanking[0]) : null;
+          const title = tw ? `${tw.emoji} ${esc(tw.name)} wint! 🏆` : r[0] ? `${esc(r[0].name)} wint! 🏆` : 'Klaar!';
+          const sub = tw ? `<div class="teamscores" style="margin-top:.6em">${v.teamRanking.map((id) => v.teams.find((t) => t.id === id)).map((t) => `<div class="tscore" style="--t:${t.color}"><span class="e">${t.emoji}</span><span>${esc(t.name)}</span><b>${t.score}</b></div>`).join('')}</div><div class="note" style="margin-top:.4em">Beste speler: ${r[0] ? esc(r[0].name) : ''}</div>` : '';
+          return `<div class="intro"><div class="rno">Einde van de avond</div><h2 class="pop" style="font-size:3.6em">${title}</h2>${sub}</div>`;
+        })()}
+        <div class="podium ${v.teamRanking ? 'small' : ''}">${pod}</div>
         <div class="awards">${v.awards.map((a, i) => `<div class="award" style="animation-delay:${2 + i * 0.25}s"><span class="e">${a.emoji}</span><div><b>${esc(a.title)}: ${esc(m[a.id] ? m[a.id].name : '?')}</b><small>${esc(a.text)}</small></div></div>`).join('')}</div>
         <div class="note">De spelleider kan opnieuw starten 👑</div>
       </div>`;
@@ -396,6 +425,25 @@
   const eventsBox = (r) => (r.events && r.events.length ? `<div class="events">${r.events.map((e) => `<span>${esc(e)}</span>`).join('')}</div>` : '');
 
   const REVEALS = {
+    tf: (v, r) => {
+      const m = pmap(v);
+      const by = (i) => Object.keys(m).filter((id) => r.picks && r.picks[id] === i);
+      return `<div class="panel">${head(v, '<span>🕵️ Waar of nep?</span>')}
+        <div class="${qClass(r.q.q)}" style="font-size:2.4em">${fmtQ(r.q.q)}</div>
+        <div class="tfopts">${['✅ Waar', '❌ Nep'].map((t, i) => `<div class="tfo ${i ? 'nep' : 'waar'} ${i === r.correct ? 'right' : 'wrong'}">${t}${voters(by(i), m)}</div>`).join('')}</div>
+        ${eventsBox(r)}${factBox(r.q)}</div>`;
+    },
+    wz: (v, r) => {
+      const m = pmap(v);
+      const a = m[r.author];
+      const ps = v.players.filter((p) => p.playing);
+      const vot = (id) => Object.keys(r.votes).filter((x) => r.votes[x] === id);
+      return `<div class="panel center">
+        <div class="qhead"><span class="cat">🗯️ Wie zei dit?</span><span>${r.eno} van ${r.etotal}</span></div>
+        <div class="quote">“${esc(r.entry)}”</div>
+        <div class="wiegrid">${ps.map((p) => `<div class="wiecard ${p.id === r.author ? 'top' : ''}" style="--c:${p.color}"><div class="av">${p.avatar}</div><div class="nm">${esc(p.name)}</div><div class="voters" style="justify-content:center;min-height:1.6em">${vot(p.id).map((x) => av(m[x])).join('')}</div></div>`).join('')}</div>
+        <div class="bonus">${a ? `Het was ${a.avatar} <b>${esc(a.name)}</b>!` : ''} ${r.right.length ? '' : '😈 Niemand had het door'}</div></div>`;
+    },
     mc: (v, r) => {
       const m = pmap(v);
       const by = (i) => Object.keys(m).filter((id) => r.picks && r.picks[id] === i);

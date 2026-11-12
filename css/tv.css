@@ -193,3 +193,32 @@ body.tv { overflow: hidden; }
 .spinner { width: 3em; height: 3em; border: 0.35em solid var(--ink-3); border-top-color: var(--amber); border-radius: 50%; animation: spin 1s linear infinite; margin: 2em auto; }
 .btn { background: var(--amber); color: var(--ink); border: 0; border-radius: 14px; padding: 0.7em 1.4em; font-weight: 700; font-size: 1.2em; }
 .btn.ghost { background: var(--ink-3); color: var(--text); border: 1px solid var(--line); }
+
+/* waar of nep */
+.tfopts { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; max-width: 50em; margin: 0 auto; }
+.tfo { display: flex; align-items: center; justify-content: center; gap: .6em; flex-wrap: wrap; border-radius: 22px; padding: .9em; font-family: var(--display); font-weight: 800; font-size: 2.6em; border: 3px solid transparent; transition: all .35s; }
+.tfo.waar { background: rgba(61, 220, 151, .16); border-color: rgba(61, 220, 151, .5); }
+.tfo.nep { background: rgba(255, 93, 93, .16); border-color: rgba(255, 93, 93, .5); }
+.tfo.right { transform: scale(1.06); box-shadow: 0 0 0 .2em var(--amber); }
+.tfo.wrong { opacity: .3; }
+.tfo .who { font-size: .45em; }
+/* wie zei dit */
+.quote { font-family: var(--display); font-weight: 800; font-size: 3.2em; line-height: 1.15; max-width: 20em; margin: .1em auto .7em; color: var(--amber); text-wrap: balance; }
+/* teams */
+#board:has(.teamgroup) { gap: 1.4em; align-items: flex-end; }
+.teamgroup { border: 2px solid var(--t); border-radius: 22px; padding: .3em .6em .5em; background: color-mix(in srgb, var(--t) 8%, transparent); }
+.teamhead { text-align: center; font-weight: 700; margin-bottom: .35em; color: var(--t); }
+.teamhead b { font-family: var(--display); color: var(--text); margin-left: .3em; }
+.teamchips { display: flex; gap: .5em; flex-wrap: wrap; justify-content: center; }
+.teamchips .pchip { padding-right: .7em; }
+.teamscores { display: flex; gap: 1em; justify-content: center; margin-bottom: 1.2em; }
+.tscore { display: flex; align-items: center; gap: .6em; border: 2px solid var(--t); border-radius: 18px; padding: .5em 1.2em; font-size: 1.5em; background: color-mix(in srgb, var(--t) 12%, transparent); }
+.tscore .e { font-size: 1.4em; }
+.tscore b { font-family: var(--display); font-size: 1.3em; }
+
+.podium.small { margin: .4em 0 1em; }
+.podium.small .av { font-size: 2.4em; }
+.podium.small .p1 .block { height: 2.4em; }
+.podium.small .p2 .block { height: 1.8em; }
+.podium.small .p3 .block { height: 1.3em; }
+.podium.small .block { font-size: 1.8em; }

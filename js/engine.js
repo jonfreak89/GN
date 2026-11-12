@@ -3,24 +3,32 @@
 (function (root) {
   const GN = (root.GN = root.GN || (typeof require !== 'undefined' ? require('./content.js') : {}));
 
-  const TIME = { catpick: 15, mc: 30, num: 40, bet: 25, bluffWrite: 60, bluffVote: 30, order: 45, ken: 35, wie: 30, poll: 40, wager: 30, final: 35 };
-  const SHOW = { intro: 6, reveal: 9, revealLong: 12, scores: 9 };
+  const TIME = { catpick: 15, mc: 30, tf: 15, num: 40, bet: 25, bluffWrite: 60, bluffVote: 30, order: 45, ken: 35, wie: 30, poll: 40, wzWrite: 60, wzGuess: 20, wager: 30, final: 35 };
+  const SHOW = { intro: 6, reveal: 9, revealShort: 6, revealLong: 12, scores: 9 };
 
   const ROUNDS = {
     mc: { title: 'Meerkeuze', emoji: '🅰️', desc: 'Kies het juiste antwoord. Iedereen tegelijk, snelheid telt niet.', pick: 2 },
     num: { title: 'Schatten & Wedden', emoji: '🎯', desc: 'Schat een getal. Daarna wed je op het antwoord dat het dichtst zit.', pick: 1 },
     bluff: { title: 'Bluffen', emoji: '🤥', desc: 'Verzin een nep-antwoord en zoek daarna het echte. Wie je erin luist, levert punten op.', pick: 1 },
     order: { title: 'Op volgorde', emoji: '🔢', desc: 'Zet de vier dingen in de juiste volgorde.', pick: 1 },
+    tf: { title: 'Waar of nep?', emoji: '🕵️', desc: 'Klopt deze stelling, of is het onzin? Snel kiezen: waar of nep.', pick: 3 },
     persoonlijk: { title: 'Hoe goed ken je elkaar?', emoji: '🫣', desc: 'Geen goede antwoorden, alleen jullie.', pick: 0 },
+    wiezei: { title: 'Wie zei dit?', emoji: '🗯️', desc: 'Iedereen schrijft anoniem een antwoord. Daarna raad je wie wat schreef.', pick: 0 },
     final: { title: 'De Finale', emoji: '💰', desc: 'Zet zoveel punten in als je durft op één laatste vraag.', pick: 0 },
   };
 
   const PLANS = {
-    kort: [['mc', 4], ['num', 2], ['bluff', 2], ['order', 2], ['persoonlijk', 3], ['final', 1]],
-    normaal: [['mc', 5], ['num', 3], ['bluff', 3], ['order', 3], ['persoonlijk', 4], ['mc', 4], ['final', 1]],
-    lang: [['mc', 6], ['num', 3], ['bluff', 3], ['order', 3], ['persoonlijk', 5], ['mc', 5], ['num', 2], ['bluff', 2], ['final', 1]],
+    kort: [['mc', 3], ['tf', 4], ['num', 2], ['bluff', 2], ['order', 2], ['persoonlijk', 3], ['wiezei', 1], ['final', 1]],
+    normaal: [['mc', 5], ['tf', 5], ['num', 3], ['bluff', 3], ['order', 3], ['persoonlijk', 4], ['wiezei', 1], ['mc', 4], ['final', 1]],
+    lang: [['mc', 6], ['tf', 6], ['num', 3], ['bluff', 3], ['order', 3], ['persoonlijk', 5], ['wiezei', 2], ['mc', 5], ['tf', 4], ['num', 2], ['bluff', 2], ['final', 1]],
   };
-  const LENGTHS = { kort: '± 15 min', normaal: '± 25 min', lang: '± 40 min' };
+  const LENGTHS = { kort: '± 20 min', normaal: '± 30 min', lang: '± 45 min' };
+  const ROUND_KEYS = ['mc', 'tf', 'num', 'bluff', 'order', 'persoonlijk', 'wiezei'];
+  const TEAMS = [
+    { name: 'Team Patat', emoji: '🍟', color: '#ffb627' },
+    { name: 'Team Tulp', emoji: '🌷', color: '#ff4f8b' },
+    { name: 'Team Kaas', emoji: '🧀', color: '#4cc9f0' },
+  ];
 
   const POWERUPS = {
     dubbel: { name: 'Dubbel', emoji: '✖️2', desc: 'Jouw punten voor deze vraag tellen dubbel.' },
@@ -34,6 +42,7 @@
   const AVATARS = ['🦊', '🐸', '🐙', '🦄', '🐻', '🐼', '🐯', '🦁', '🐷', '🐵', '🦉', '🐔', '🦖', '🐢', '🦀', '🐝', '👽', '🤖', '👻', '🎃', '🧙', '🧛', '🧟', '🥷', '🤠', '🦩', '🦦', '🐌', '🥨', '🍄'];
   const COLORS = ['#ff5d73', '#ffb627', '#3ddc97', '#4cc9f0', '#b388ff', '#ff8fab', '#f9f871', '#62d2a2', '#ff9a3c', '#7aa2ff', '#e36bae', '#9be564'];
   const BOT_NAMES = ['Bot Bertje', 'Bot Truus', 'Bot Henk', 'Bot Ingrid', 'Bot Kees', 'Bot Greet'];
+  const BOT_LINES = ['Error 404: grap niet gevonden', 'Ik ben een robot, ik voel niks', 'Mijn moeder was een broodrooster', 'Bliep bloep', 'Dat zeg ik alleen tegen mijn advocaat', 'Geen commentaar'];
 
   const norm = (s) =>
     String(s || '')
@@ -56,7 +65,7 @@
         players: {},
         order: [],
         gm: null,
-        settings: { spice: 2, length: 'normaal', gmPlays: true, voice: false },
+        settings: { spice: 2, length: 'normaal', gmPlays: true, voice: false, teams: 0, rounds: { mc: true, tf: true, num: true, bluff: true, order: true, persoonlijk: true, wiezei: true } },
         step: { kind: 'lobby', id: 0 },
         paused: null,
         plan: [],
@@ -115,14 +124,46 @@
       s.players[id] = p;
       s.order.push(id);
       if (!s.gm) this.assignGm();
+      if (s.settings.teams && p.playing) p.team = this.smallestTeam(id);
       this.changed();
       return id;
     }
-    blankStats() { return { correct: 0, fooled: 0, betWins: 0, closest: 0, kenCorrect: 0, wieVotes: 0, powerups: 0, stolen: 0 }; }
+
+    // ---------- teams ----------
+    teamCount() { return this.s.settings.teams || 0; }
+    smallestTeam(except) {
+      const n = this.teamCount();
+      const sizes = Array.from({ length: n }, (_, t) => this.contestants().filter((p) => p.team === t && p.id !== except).length);
+      const min = Math.min(...sizes);
+      return this.pick(sizes.map((v, i) => i).filter((i) => sizes[i] === min));
+    }
+    balanceTeams(random) {
+      const n = this.teamCount();
+      const ps = random ? this.shuffle(this.contestants()) : this.contestants();
+      this.players.forEach((p) => (p.team = null));
+      if (!n) return;
+      // mensen eerst eerlijk verdelen, bots daarna aanvullen
+      const humans = ps.filter((p) => !p.isBot), bots = ps.filter((p) => p.isBot);
+      humans.concat(bots).forEach((p, i) => (p.team = i % n));
+    }
+    teamScores() {
+      const n = this.teamCount();
+      if (!n) return null;
+      const teams = TEAMS.slice(0, n).map((t, i) => {
+        const members = this.contestants().filter((p) => p.team === i);
+        const sum = members.reduce((a, p) => a + p.score, 0);
+        return Object.assign({ id: i, members: members.map((p) => p.id), size: members.length, sum }, t);
+      });
+      // kleinere teams krijgen een bonus zodat het eerlijk blijft
+      const max = Math.max(1, ...teams.map((t) => t.size));
+      teams.forEach((t) => (t.score = t.size ? Math.round((t.sum * max) / t.size) : 0));
+      return teams;
+    }
+    blankStats() { return { correct: 0, fooled: 0, betWins: 0, closest: 0, kenCorrect: 0, wieVotes: 0, powerups: 0, stolen: 0, wzRight: 0 }; }
     assignGm() {
       const h = this.players.find((p) => !p.isBot && p.connected) || this.players.find((p) => !p.isBot);
       this.s.gm = h ? h.id : null;
-      if (h && !this.s.settings.gmPlays && this.s.step.kind === 'lobby') h.playing = false;
+      if (h && !this.s.settings.gmPlays && this.s.step.kind === 'lobby') { h.playing = false; h.team = null; }
     }
     addBot() {
       const bots = this.players.filter((p) => p.isBot).length;
@@ -130,6 +171,7 @@
       const id = this.join({ token: 'bot' + bots + ':' + this.rand(), name: BOT_NAMES[bots], avatar: '🤖' });
       this.s.players[id].isBot = true;
       if (this.s.gm === id) this.assignGm();
+      if (this.teamCount()) this.s.players[id].team = this.smallestTeam(id);
       this.changed();
     }
     setConnected(id, on) {
@@ -187,7 +229,7 @@
         const gens = this.gensFor(type, cat);
         for (let i = 0; i < 40 && gens.length && !q; i++) {
           const g = this.pick(gens).make(this.rand);
-          if (g && !this.seen[g.id]) q = Object.assign({ cat }, g);
+          if (g && !this.seen[g.id] && !(g.base && this.seen[g.base])) q = Object.assign({ cat }, g);
         }
       }
       if (!q && pool.length) q = pool.slice().sort((a, b) => this.seen[a.id] - this.seen[b.id])[0];
@@ -202,6 +244,7 @@
         return null;
       }
       this.markSeen(q.id);
+      if (q.base) this.markSeen(q.base);
       return q;
     }
     drawPrompt(type) {
@@ -235,7 +278,11 @@
         p.stats = this.blankStats();
         p.powerups = [this.pick(PU_KEYS)];
       });
-      s.plan = PLANS[s.settings.length].map(([type, count]) => ({ type, count }));
+      const on = s.settings.rounds || {};
+      let plan = PLANS[s.settings.length].filter(([type]) => type === 'final' || on[type] !== false);
+      if (plan.length === 1) plan = [['mc', 5], ['final', 1]];
+      s.plan = plan.map(([type, count]) => ({ type, count }));
+      if (this.teamCount()) this.players.forEach((p) => { if (p.playing && (p.team == null || p.team >= this.teamCount())) p.team = this.smallestTeam(p.id); });
       s.roundIdx = -1;
       this.nextRound();
     }
@@ -244,7 +291,8 @@
       s.roundIdx++;
       const r = s.plan[s.roundIdx];
       if (!r) return this.endGame();
-      if (r.type === 'persoonlijk' && this.humans().length + this.contestants().filter((p) => p.isBot).length < 2) return this.nextRound();
+      if (r.type === 'persoonlijk' && this.contestants().length < 2) return this.nextRound();
+      if (r.type === 'wiezei' && this.contestants().length < 3) return this.nextRound();
       s.round = { type: r.type, count: r.count, done: 0, cat: null, usedCats: [] };
       const R = ROUNDS[r.type];
       this.newStep('intro', { round: r.type, title: R.title, emoji: R.emoji, desc: R.desc, roundNo: s.roundIdx + 1, rounds: s.plan.length, count: r.count }, SHOW.intro);
@@ -256,12 +304,22 @@
       const R = ROUNDS[r.type];
       if (r.type === 'final') return this.startFinal();
       if (r.type === 'persoonlijk') return this.askPersonal();
+      if (r.type === 'wiezei') return this.askWz();
       if (R.pick && r.done % R.pick === 0) return this.catPick();
       this.ask();
     }
     lastPlace() {
-      const ps = this.active();
+      let ps = this.active();
       if (!ps.length) return null;
+      const teams = this.teamScores();
+      if (teams) {
+        const live = teams.filter((t) => ps.some((p) => p.team === t.id));
+        if (live.length) {
+          const low = Math.min(...live.map((t) => t.score));
+          const lt = this.pick(live.filter((t) => t.score === low));
+          ps = ps.filter((p) => p.team === lt.id);
+        }
+      }
       const min = Math.min(...ps.map((p) => p.score));
       const low = ps.filter((p) => p.score === min);
       const humans = low.filter((p) => !p.isBot);
@@ -292,6 +350,8 @@
       if (r.type === 'mc') {
         const opts = this.shuffle(q.a.map((t, i) => ({ t, ok: i === 0 })));
         this.newStep('mc', Object.assign(base, { options: opts.map((o) => o.t), correct: opts.findIndex((o) => o.ok) }), TIME.mc);
+      } else if (r.type === 'tf') {
+        this.newStep('tf', Object.assign(base, { options: ['Waar', 'Nep'], correct: q.a ? 0 : 1 }), TIME.tf);
       } else if (r.type === 'num') {
         this.newStep('num', base, TIME.num);
       } else if (r.type === 'bluff') {
@@ -302,28 +362,74 @@
       }
     }
     askPersonal() {
-    const r = this.s.round;
-    const players = this.contestants();
-    const types = ['ken', 'wie', 'poll'].filter((t) => (t === 'ken' ? players.length >= 2 : players.length >= 3));
-    if (!types.length) { r.done = r.count; return this.roundScores(); }
-    const type = types[r.done % types.length];
-    const p = this.drawPrompt(type) || this.drawPrompt('ken');
-    if (!p) { r.done = r.count; return this.roundScores(); }
-    const base = { q: p, qno: r.done + 1, qcount: r.count };
-    if (p.type === 'ken') {
-      const humans = this.humans().filter((h) => h.connected);
-      const pool = humans.length ? humans : players;
-      this.s.lastHot = (this.s.lastHot + 1) % pool.length;
-      const hot = pool[this.s.lastHot];
-      const text = p.q.replace(/\{naam\}/g, hot.name);
-      this.newStep('ken', Object.assign(base, { hot: hot.id, text, options: p.options.slice() }), TIME.ken);
-    } else if (p.type === 'poll') {
-      this.newStep('poll', Object.assign(base, { text: p.q, n: players.length }), TIME.poll);
-    } else {
-      this.newStep('wie', Object.assign(base, { text: p.q }), TIME.wie);
+      const r = this.s.round;
+      const players = this.contestants();
+      const types = ['ken', 'wie', 'poll'].filter((t) => (t === 'ken' ? players.length >= 2 : players.length >= 3));
+      if (!types.length) { r.done = r.count; return this.roundScores(); }
+      const type = types[r.done % types.length];
+      const p = this.drawPrompt(type) || this.drawPrompt('ken');
+      if (!p) { r.done = r.count; return this.roundScores(); }
+      const base = { q: p, qno: r.done + 1, qcount: r.count };
+      if (p.type === 'ken') {
+        const humans = this.humans().filter((h) => h.connected);
+        const pool = humans.length ? humans : players;
+        this.s.lastHot = (this.s.lastHot + 1) % pool.length;
+        const hot = pool[this.s.lastHot];
+        const text = p.q.replace(/\{naam\}/g, hot.name);
+        this.newStep('ken', Object.assign(base, { hot: hot.id, text, options: p.options.slice() }), TIME.ken);
+      } else if (p.type === 'poll') {
+        this.newStep('poll', Object.assign(base, { text: p.q, n: players.length }), TIME.poll);
+      } else {
+        this.newStep('wie', Object.assign(base, { text: p.q }), TIME.wie);
+      }
     }
-  }
-  startFinal() {
+    askWz() {
+      const r = this.s.round;
+      const p = this.drawPrompt('wz');
+      if (!p) { r.done = r.count; return this.roundScores(); }
+      r.wz = null;
+      this.newStep('wzWrite', { q: p, text: p.q, qno: r.done + 1, qcount: r.count }, TIME.wzWrite);
+    }
+    wzStart() {
+      const st = this.s.step;
+      const r = this.s.round;
+      const entries = this.shuffle(Object.entries(st.answers).map(([author, text]) => ({ author, text }))).slice(0, 6);
+      if (entries.length < 2) {
+        // te weinig antwoorden om te raden
+        r.done++;
+        return this.nextQuestion();
+      }
+      r.wz = { text: st.text, q: st.q, entries, idx: 0 };
+      this.wzGuess();
+    }
+    wzGuess() {
+      const r = this.s.round;
+      const e = r.wz.entries[r.wz.idx];
+      this.newStep('wzGuess', { text: r.wz.text, entry: e.text, author: e.author, eno: r.wz.idx + 1, etotal: r.wz.entries.length, qno: r.done + 1, qcount: r.count }, TIME.wzGuess);
+    }
+    revealWz() {
+      const st = this.s.step;
+      const gains = {};
+      const right = [];
+      let fooled = 0;
+      Object.entries(st.answers).forEach(([pid, v]) => {
+        if (v === st.author) {
+          gains[pid] = 100;
+          right.push(pid);
+          const p = this.s.players[pid];
+          if (p) p.stats.wzRight = (p.stats.wzRight || 0) + 1;
+        } else fooled++;
+      });
+      if (fooled) {
+        gains[st.author] = (gains[st.author] || 0) + 50 * fooled;
+        const a = this.s.players[st.author];
+        if (a) a.stats.fooled += fooled;
+      }
+      Object.entries(gains).forEach(([pid, g]) => { const p = this.s.players[pid]; if (p) p.score += g; });
+      this.reveal({ of: 'wz', text: st.text, entry: st.entry, author: st.author, votes: st.answers, right, gains, events: [], eno: st.eno, etotal: st.etotal, qno: st.qno, qcount: st.qcount }, SHOW.revealShort);
+    }
+
+    startFinal() {
       const cats = this.eligibleCats('mc');
       const cat = this.pick(cats).id;
       this.s.round.cat = cat;
@@ -334,10 +440,11 @@
     scheduleBots() {
       this.botQueue = [];
       const st = this.s.step;
-      const answering = ['catpick', 'mc', 'num', 'bet', 'bluffWrite', 'bluffVote', 'order', 'ken', 'wie', 'poll', 'wager', 'final'];
+      const answering = ['catpick', 'mc', 'tf', 'num', 'bet', 'bluffWrite', 'bluffVote', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'wzGuess', 'wager', 'final'];
       if (!answering.includes(st.kind)) return;
       this.players.filter((p) => p.isBot && p.playing).forEach((b) => {
         if (st.kind === 'catpick' && st.picker !== b.id) return;
+        if (st.kind === 'wzGuess' && st.author === b.id) return;
         this.botQueue.push({ at: this.now() + (1.5 + this.rand() * 6) * 1000, id: b.id, step: st.id });
       });
     }
@@ -353,7 +460,15 @@
       const R = () => this.rand();
       switch (st.kind) {
         case 'catpick': return this.action(id, { a: 'pickcat', cat: this.pick(st.options) });
-        case 'mc': case 'final': return this.action(id, { a: 'answer', v: R() < 0.55 ? st.correct : Math.floor(R() * st.options.length) });
+        case 'mc': case 'final': case 'tf': return this.action(id, { a: 'answer', v: R() < 0.55 ? st.correct : Math.floor(R() * st.options.length) });
+        case 'wzWrite': {
+          const pool = (st.q.bot || BOT_LINES).filter((t) => !Object.values(st.answers).includes(t));
+          return this.action(id, { a: 'answer', v: this.pick(pool.length ? pool : BOT_LINES) });
+        }
+        case 'wzGuess': {
+          const others = this.contestants().filter((p) => p.id !== id);
+          return this.action(id, { a: 'answer', v: this.pick(others).id });
+        }
         case 'num': {
           const ans = st.q.answer;
           return this.action(id, { a: 'answer', v: Math.max(0, Math.round(ans * (0.4 + R() * 1.3))) });
@@ -395,13 +510,18 @@
         if (act.avatar) p.avatar = act.avatar;
         return this.changed();
       }
+      if (act.a === 'team' && st.kind === 'lobby' && this.teamCount() && p.playing) {
+        const t = Number(act.team);
+        if (t >= 0 && t < this.teamCount()) { p.team = t; this.changed(); }
+        return;
+      }
       if (s.paused || !p.playing) return;
       if (act.a === 'pickcat') {
         if (st.kind === 'catpick' && st.picker === id) this.resolveCatPick(act.cat);
         return;
       }
       if (act.a === 'skip') {
-        if (['mc', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll'].includes(st.kind) && this.skippable()) this.skipQuestion(true);
+        if (['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite'].includes(st.kind) && this.skippable()) this.skipQuestion(true);
         return;
       }
       if (act.a === 'powerup') return this.usePowerup(p, act);
@@ -409,8 +529,18 @@
       if (st.answers[id] !== undefined && st.kind !== 'bluffWrite') return;
       const v = act.v;
       switch (st.kind) {
-        case 'mc': case 'final': case 'ken':
+        case 'mc': case 'final': case 'ken': case 'tf':
           if (!Number.isInteger(v) || v < 0 || v >= st.options.length) return;
+          break;
+        case 'wzWrite': {
+          const txt = String(v || '').trim().slice(0, 80);
+          if (!txt) return;
+          st.answers[id] = txt;
+          this.changed();
+          return this.checkAllIn();
+        }
+        case 'wzGuess':
+          if (id === st.author || !s.players[v] || v === id) return;
           break;
         case 'num':
           if (typeof v !== 'number' || !isFinite(v)) return;
@@ -459,7 +589,7 @@
     skippable() {
       const st = this.s.step;
       if (!st.q) return false;
-      if (st.kind === 'ken' || st.kind === 'wie' || st.kind === 'poll') return (st.q.spice || 1) >= 3;
+      if (['ken', 'wie', 'poll', 'wzWrite'].includes(st.kind)) return (st.q.spice || 1) >= 3;
       return GN.qSpice(st.q) >= 3;
     }
     skipQuestion(anonymous) {
@@ -468,12 +598,13 @@
       // power-ups teruggeven die al gebruikt waren
       Object.entries(st.powerups || {}).forEach(([pid, pu]) => { const p = this.s.players[pid]; if (p) p.powerups.push(pu.type); });
       if (this.s.round.type === 'persoonlijk') return this.askPersonal();
+      if (this.s.round.type === 'wiezei') return this.askWz();
       this.ask(note);
     }
     usePowerup(p, act) {
       const st = this.s.step;
       const type = act.type;
-      if (!['mc', 'num', 'order'].includes(st.kind)) return;
+      if (!['mc', 'tf', 'num', 'order'].includes(st.kind)) return;
       if (st.powerups[p.id] || st.answers[p.id] !== undefined && type === 'vijftig') return;
       const idx = p.powerups.indexOf(type);
       if (idx < 0 || POWERUPS[type].passive) return;
@@ -504,6 +635,10 @@
           if ([1, 2, 3].includes(n.spice)) s.settings.spice = n.spice;
           if (PLANS[n.length]) s.settings.length = n.length;
           if (typeof n.voice === 'boolean') s.settings.voice = n.voice;
+          if ([0, 2, 3].includes(n.teams)) { s.settings.teams = n.teams; this.balanceTeams(false); }
+          if (n.rounds && typeof n.rounds === 'object') {
+            ROUND_KEYS.forEach((k) => { if (typeof n.rounds[k] === 'boolean') s.settings.rounds[k] = n.rounds[k]; });
+          }
           if (typeof n.gmPlays === 'boolean') {
             s.settings.gmPlays = n.gmPlays;
             const gm = s.players[s.gm];
@@ -512,6 +647,7 @@
           return this.changed();
         }
         case 'gm:addbot': if (st.kind === 'lobby') this.addBot(); return;
+        case 'gm:shuffle': if (st.kind === 'lobby' && this.teamCount()) { this.balanceTeams(true); this.changed(); } return;
         case 'gm:kick': if (act.id !== s.gm) this.kick(act.id); return;
         case 'gm:transfer': {
           const t = s.players[act.id];
@@ -531,7 +667,7 @@
           } else s.paused = { at: this.now() };
           return this.changed();
         case 'gm:skip':
-          if (['mc', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll'].includes(st.kind)) this.skipQuestion(false);
+          if (['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite'].includes(st.kind)) this.skipQuestion(false);
           return;
         case 'gm:next':
           if (!s.paused && st.kind !== 'lobby' && st.kind !== 'end') this.timeout();
@@ -567,7 +703,11 @@
     needAnswers() {
       const st = this.s.step;
       switch (st.kind) {
-        case 'mc': case 'num': case 'bet': case 'bluffWrite': case 'bluffVote': case 'order': case 'ken': case 'wie': case 'poll': case 'wager': case 'final':
+        case 'mc': case 'tf': case 'num': case 'bet': case 'bluffWrite': case 'bluffVote': case 'order': case 'ken': case 'wie': case 'poll': case 'wzWrite': case 'wager': case 'final':
+          return this.active();
+        case 'wzGuess':
+          return this.active().filter((p) => p.id !== st.author);
+        case '__never':
           return this.active();
         case 'catpick': {
           const p = this.s.players[st.picker];
@@ -581,7 +721,10 @@
       switch (st.kind) {
         case 'intro': return this.nextQuestion();
         case 'catpick': return this.resolveCatPick(null);
-        case 'mc': return this.revealMc();
+        case 'mc': return this.revealMc('mc');
+        case 'tf': return this.revealMc('tf');
+        case 'wzWrite': return this.wzStart();
+        case 'wzGuess': return this.revealWz();
         case 'num': return this.toBet();
         case 'bet': return this.revealNum();
         case 'bluffWrite': return this.toBluffVote();
@@ -592,7 +735,12 @@
         case 'poll': return this.revealPoll();
         case 'wager': return this.finalQuestion();
         case 'final': return this.revealFinal();
-        case 'reveal': this.s.round.done++; return this.nextQuestion();
+        case 'reveal': {
+          const r = this.s.round;
+          if (st.of === 'wz' && r.wz && r.wz.idx < r.wz.entries.length - 1) { r.wz.idx++; return this.wzGuess(); }
+          r.done++;
+          return this.nextQuestion();
+        }
         case 'scores': return this.nextRound();
       }
     }
@@ -636,7 +784,7 @@
       this.newStep('reveal', data, secs || SHOW.reveal);
     }
 
-    revealMc() {
+    revealMc(of = 'mc') {
       const st = this.s.step;
       const gains = {};
       const right = [];
@@ -644,7 +792,7 @@
         if (st.answers[p.id] === st.correct) { gains[p.id] = 100; right.push(p.id); p.stats.correct++; }
       });
       const events = this.applyGains(gains, st);
-      this.reveal({ of: 'mc', q: st.q, cat: st.cat, options: st.options, correct: st.correct, picks: st.answers, gains, events, right, qno: st.qno, qcount: st.qcount });
+      this.reveal({ of, q: st.q, cat: st.cat, options: st.options, correct: st.correct, picks: st.answers, gains, events, right, qno: st.qno, qcount: st.qcount }, of === 'tf' ? SHOW.revealShort + (st.q.fact ? 2 : 0) : SHOW.reveal);
     }
 
     toBet() {
@@ -852,12 +1000,14 @@
       best('wieVotes', 'Verdachte van de avond', '🕵️', (n) => `${n} stemmen bij "Wie van ons…"`);
       best('stolen', 'Zakkenroller', '🦝', (n) => `${n} punten gestolen`);
       best('powerups', 'Chaosmaker', '💥', (n) => `${n} power-ups gebruikt`);
-      this.newStep('end', { ranking: ps.map((p) => p.id), awards }, 0);
+      best('wzRight', 'Detective', '🔎', (n) => `${n}× geraden wie wat zei`);
+      const teams = this.teamScores();
+      this.newStep('end', { ranking: ps.map((p) => p.id), awards, teamRanking: teams ? teams.slice().sort((a, b) => b.score - a.score).map((t) => t.id) : null }, 0);
     }
 
     // ---------- views ----------
     pub(p) {
-      return { id: p.id, name: p.name, avatar: p.avatar, color: p.color, score: p.score, connected: p.connected, isBot: p.isBot, playing: p.playing, gm: this.s.gm === p.id, powerups: p.powerups.length };
+      return { id: p.id, name: p.name, avatar: p.avatar, color: p.color, score: p.score, connected: p.connected, isBot: p.isBot, playing: p.playing, gm: this.s.gm === p.id, powerups: p.powerups.length, team: p.team == null ? null : p.team };
     }
     remaining() {
       const st = this.s.step;
@@ -878,6 +1028,7 @@
         answered: Object.keys(st.answers || {}),
         need: (this.needAnswers() || []).map((p) => p.id),
         powerupsUsed: Object.keys(st.powerups || {}),
+        teams: this.teamScores(),
       };
       const copy = (keys) => keys.forEach((k) => { if (st[k] !== undefined) v[k] = st[k]; });
       copy(['title', 'emoji', 'desc', 'roundNo', 'rounds', 'count', 'qno', 'qcount', 'skippedNote']);
@@ -886,7 +1037,9 @@
       if (st.q) v.q = { q: st.q.q, unit: st.q.unit, fact: st.q.fact, lo: st.q.lo, hi: st.q.hi, fmt: st.q.fmt, img: st.q.img, emoji: st.q.emoji, answer: undefined };
       switch (st.kind) {
         case 'catpick': v.picker = st.picker; v.options = st.options.map((c) => this.catInfo(c)); v.chosen = st.chosen; break;
-        case 'mc': case 'final': v.options = st.options; if (st.kind === 'final') v.wagers = st.wagers; break;
+        case 'mc': case 'final': case 'tf': v.options = st.options; if (st.kind === 'final') v.wagers = st.wagers; break;
+        case 'wzWrite': v.text = st.text; break;
+        case 'wzGuess': v.text = st.text; v.entry = st.entry; v.eno = st.eno; v.etotal = st.etotal; v.author = st.author; break;
         case 'bet': v.guesses = st.guesses; break;
         case 'bluffVote': v.options = st.options.map((o) => o.text); break;
         case 'order': v.items = st.items; break;
@@ -903,7 +1056,7 @@
           break;
         }
         case 'scores': v.bonus = st.bonus; v.nextRound = st.nextRound; break;
-        case 'end': v.ranking = st.ranking; v.awards = st.awards; break;
+        case 'end': v.ranking = st.ranking; v.awards = st.awards; v.teamRanking = st.teamRanking; break;
       }
       return v;
     }
@@ -915,11 +1068,13 @@
       if (!p) return { screen: 'kicked', key: 'kicked' };
       const isGm = s.gm === id;
       const answered = st.answers ? st.answers[id] !== undefined : false;
-      const me = { id: p.id, name: p.name, avatar: p.avatar, color: p.color, score: p.score, powerups: p.powerups, isGm, playing: p.playing };
+      const me = { id: p.id, name: p.name, avatar: p.avatar, color: p.color, score: p.score, powerups: p.powerups, isGm, playing: p.playing, team: p.team == null ? null : p.team };
       const sorted = this.contestants().slice().sort((a, b) => b.score - a.score);
       me.rank = sorted.findIndex((x) => x.id === id) + 1;
       const v = { me, kind: st.kind, stepId: st.id, paused: !!s.paused, deadline: st.deadline, duration: st.duration, remaining: this.remaining(), answered, settings: s.settings };
-      v.gm = isGm ? { canSkip: ['mc', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll'].includes(st.kind), canNext: !['lobby', 'end'].includes(st.kind), players: this.players.map((x) => this.pub(x)) } : null;
+      const teams = this.teamScores();
+      if (teams) { v.teams = teams.map((t) => ({ id: t.id, name: t.name, emoji: t.emoji, color: t.color, score: t.score, size: t.size })); }
+      v.gm = isGm ? { canSkip: ['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite'].includes(st.kind), canNext: !['lobby', 'end'].includes(st.kind), players: this.players.map((x) => this.pub(x)) } : null;
       if (st.cat) v.cat = this.catInfo(st.cat);
       const qtext = st.q ? st.q.q : null;
       v.key = st.kind + ':' + st.id + ':' + (answered ? 'a' : 'n') + (p.playing ? '' : ':gm');
@@ -936,6 +1091,8 @@
           v.key = 'lobby';
           v.spiceList = GN.SPICE.filter(Boolean);
           v.lengths = LENGTHS;
+          v.roundList = ROUND_KEYS.map((k) => ({ id: k, title: ROUNDS[k].title, emoji: ROUNDS[k].emoji }));
+          v.teamList = TEAMS;
           break;
         case 'intro':
           v.screen = 'wait';
@@ -946,6 +1103,33 @@
           v.options = st.options.map((c) => this.catInfo(c));
           v.title = st.picker === id ? 'Jij staat laatst, jij kiest!' : `${this.name(st.picker)} kiest een categorie…`;
           v.big = '🎡';
+          break;
+        case 'tf':
+          v.screen = 'choice';
+          v.tf = true;
+          v.q = qtext;
+          v.options = st.options;
+          v.myAnswer = st.answers[id];
+          v.hidden = [];
+          break;
+        case 'wzWrite':
+          v.screen = 'write';
+          v.wz = true;
+          v.q = st.text;
+          v.myAnswer = st.answers[id];
+          break;
+        case 'wzGuess':
+          if (st.author === id) {
+            v.screen = 'wait'; v.big = '🤫'; v.title = 'Dit is jouw antwoord!'; v.sub = 'Pokerface. De rest raadt van wie het is.';
+            v.key += ':author';
+            break;
+          }
+          v.screen = 'vote';
+          v.wzq = st.text;
+          v.q = '"' + st.entry + '"';
+          v.sub = 'Wie zei dit?';
+          v.players = this.contestants().filter((x) => x.id !== id).map((x) => this.pub(x));
+          v.myAnswer = st.answers[id];
           break;
         case 'mc': case 'final': {
           v.screen = 'choice';
@@ -1026,23 +1210,26 @@
         case 'end':
           v.screen = 'end';
           v.rank = st.ranking.indexOf(id) + 1;
+          if (st.teamRanking && p.team != null) v.teamRank = st.teamRanking.indexOf(p.team) + 1;
           v.awards = st.awards.filter((a) => a.id === id);
           v.key = 'end:' + st.id;
           break;
       }
       // power-ups beschikbaar?
-      if (['mc', 'num', 'order'].includes(st.kind) && !st.powerups[id]) {
+      if (['mc', 'tf', 'num', 'order'].includes(st.kind) && !st.powerups[id]) {
         v.canPowerup = p.powerups.some((x) => !POWERUPS[x].passive && (x !== 'vijftig' || st.kind === 'mc'));
         v.targets = this.contestants().filter((x) => x.id !== id).map((x) => ({ id: x.id, name: x.name, avatar: x.avatar }));
       }
       v.usedPowerup = st.powerups && st.powerups[id] ? st.powerups[id].type : null;
-      v.skippable = ['mc', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll'].includes(st.kind) && this.skippable();
+      v.skippable = ['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite'].includes(st.kind) && this.skippable();
       return v;
     }
     resultLine(id, st) {
       switch (st.of) {
         case 'mc': return st.right.includes(id) ? 'Goed!' : `Het was: ${st.options[st.correct]}`;
         case 'final': return st.right.includes(id) ? 'Goed! Inzet verdubbeld 💰' : `Fout… het was: ${st.options[st.correct]}`;
+        case 'tf': return st.right.includes(id) ? 'Goed!' : `Fout, het was ${st.options[st.correct].toLowerCase()}`;
+        case 'wz': return st.author === id ? (st.gains[id] ? `Je luisde er ${st.gains[id] / 50} in 😏` : 'Iedereen had je door 😅') : st.right.includes(id) ? 'Goed geraden!' : `Het was ${this.name(st.author)}`;
         case 'num': return `Het antwoord: ${fmtNum(st.q.answer)}${st.q.unit ? ' ' + st.q.unit : ''}`;
         case 'bluff': {
           const n = (st.fooledBy[id] || []).length;
@@ -1076,6 +1263,7 @@
 
   GN.Engine = Engine;
   GN.ROUNDS = ROUNDS;
+  GN.TEAMS = TEAMS;
   GN.POWERUPS = POWERUPS;
   GN.AVATARS = AVATARS;
   GN.LENGTHS = LENGTHS;
