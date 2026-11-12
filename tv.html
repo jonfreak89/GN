@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game Night · TV</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/tv.css">
+</head>
+<body class="tv">
+  <div id="app">
+    <header id="top">
+      <div class="logo"><span class="g">Game</span> <span class="n">Night</span></div>
+      <div class="roundinfo" id="roundinfo"></div>
+      <span class="net" id="net"></span>
+      <div class="timer hidden" id="timer"><svg viewBox="0 0 60 60"><circle class="bg" cx="30" cy="30" r="26"/><circle class="fg" cx="30" cy="30" r="26"/></svg><span></span></div>
+      <div class="codebadge"><small>Meedoen? Code</small><b id="code"></b></div>
+    </header>
+    <main id="stage"><div class="splash"><h1 class="logo"><span class="g">Game</span> <span class="n">Night</span></h1><div class="spinner"></div></div></main>
+    <footer id="board"></footer>
+  </div>
+  <div id="overlay" class="hidden"></div>
+
+  <script src="js/content.js"></script>
+  <script src="data/kennis1.js"></script>
+  <script src="data/kennis2.js"></script>
+  <script src="data/grappig.js"></script>
+  <script src="data/donker.js"></script>
+  <script src="data/stout.js"></script>
+  <script src="data/persoonlijk.js"></script>
+  <script src="data/generators.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/net.js"></script>
+  <script src="js/tv.js"></script>
+</body>
+</html>

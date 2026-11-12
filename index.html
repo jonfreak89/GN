@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0b1f">
+  <title>Game Night</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+  <link rel="stylesheet" href="css/base.css">
+  <style>
+    main { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
+    .wrap { width: 100%; max-width: 520px; display: grid; gap: 16px; text-align: center; }
+    h1 { font-size: clamp(56px, 14vw, 110px); margin: 0; }
+    p { color: var(--muted); font-size: 18px; margin: 0 0 8px; }
+    a.card { display: flex; gap: 16px; align-items: center; text-align: left; text-decoration: none; color: var(--text); background: var(--ink-2); border: 2px solid var(--line); border-radius: 22px; padding: 18px 20px; transition: transform .15s, border-color .15s; }
+    a.card:hover, a.card:focus { border-color: var(--amber); transform: translateY(-2px); }
+    a.card .e { font-size: 44px; }
+    a.card b { font-family: var(--display); font-size: 24px; display: block; }
+    a.card small { color: var(--muted); font-size: 15px; }
+    .tip { font-size: 14px; color: var(--muted); line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="wrap">
+      <h1 class="logo"><span class="g">Game</span> <span class="n">Night</span> <span class="moon">🌙</span></h1>
+      <p>Quizavond op de TV, je telefoon is je controller.</p>
+      <a class="card" id="tv" href="tv.html"><span class="e">📺</span><span><b>Dit is de TV</b><small>Open dit op het grote scherm of cast dit tabblad</small></span></a>
+      <a class="card" id="play" href="play.html"><span class="e">📱</span><span><b>Ik speel mee</b><small>Vul de code in die op de TV staat</small></span></a>
+      <div class="tip">Tip: open de TV-pagina in de browser van je TV, of cast een Chrome-tabblad naar je Chromecast / Google TV. Iedereen scant daarna de QR-code.</div>
+    </div>
+  </main>
+  <script>
+    // ?local=1 doorgeven (testmodus in één browser)
+    if (new URLSearchParams(location.search).get('local') === '1') {
+      document.getElementById('tv').href += '?local=1';
+      document.getElementById('play').href += '?local=1';
+    }
+  </script>
+</body>
+</html>

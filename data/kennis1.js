@@ -1,0 +1,105 @@
+/* Kennis deel 1: Nederland & taal, Geschiedenis, Aardrijkskunde.
+   Formaat:
+   mc:    { type:'mc', q, a:[GOED, fout, fout, fout], fact?, d?(1-3) }
+   num:   { type:'num', q, answer, unit?, fact? }
+   bluff: { type:'bluff', q (met ___), answer, decoys:[...], accept?:[...], fact? }
+   order: { type:'order', q, lo, hi, items:[[label, waarde, weergave?], ...], fmt? } */
+
+GN.addQuestions('nederland', [
+  { type: 'mc', q: 'Hoeveel provincies heeft Nederland?', a: ['12', '11', '13', '10'] },
+  { type: 'mc', q: 'Welke stad is volgens de Grondwet de hoofdstad van Nederland?', a: ['Amsterdam', 'Den Haag', 'Utrecht', 'Rotterdam'], fact: 'De regering en het parlement zitten wel in Den Haag.' },
+  { type: 'mc', q: 'Wat bedoelt een Brabander met "Houdoe"?', a: ['Dag, hou je goed', 'Proost!', 'Hou je mond', 'Welterusten'] },
+  { type: 'mc', q: 'Welke provincie is de jongste van Nederland (1986)?', a: ['Flevoland', 'Zeeland', 'Drenthe', 'Limburg'] },
+  { type: 'mc', q: 'Wat is het hoogste punt van Europees Nederland?', a: ['De Vaalserberg', 'De Sint-Pietersberg', 'De Posbank', 'De Amerongse Berg'], fact: 'De Vaalserberg is ongeveer 322 meter hoog.' },
+  { type: 'mc', q: 'Wat was vóór het Wilhelmus het Nederlandse volkslied?', a: ['Wien Neêrlands Bloed', 'Hollands Glorie', 'Het Lied van Oranje', 'Ik hou van Holland'], d: 2, fact: 'Het Wilhelmus werd pas in 1932 officieel het volkslied.' },
+  { type: 'mc', q: 'Wat leest de koning voor op Prinsjesdag?', a: ['De troonrede', 'De kerstboodschap', 'Het regeerakkoord', 'De Grondwet'] },
+  { type: 'mc', q: 'Wie het kleine niet eert, is het grote niet …', a: ['waard', 'gewend', 'gegund', 'gewoon'] },
+  { type: 'mc', q: 'Welk dier koop je volgens het spreekwoord "in de zak"?', a: ['Een kat', 'Een hond', 'Een varken', 'Een haas'] },
+  { type: 'mc', q: 'Wat betekent "met de deur in huis vallen"?', a: ['Meteen ter zake komen', 'Onverwacht op bezoek komen', 'Dronken thuiskomen', 'Iets kapot maken'] },
+  { type: 'mc', q: 'Welk Waddeneiland is het grootst?', a: ['Texel', 'Terschelling', 'Ameland', 'Vlieland'] },
+  { type: 'mc', q: 'Welke stad heet tijdens carnaval "Oeteldonk"?', a: ["'s-Hertogenbosch", 'Eindhoven', 'Tilburg', 'Breda'] },
+  { type: 'mc', q: 'Welke stad heet tijdens carnaval "Kruikenstad"?', a: ['Tilburg', 'Breda', 'Helmond', 'Oss'] },
+  { type: 'mc', q: 'Wat is een "kopstootje"?', a: ['Jenever met een biertje', 'Een kopstoot bij voetbal', 'Een shotje advocaat', 'Een kroket met mosterd'] },
+  { type: 'mc', q: 'Wat betekent "Hij heeft een kater"?', a: ['Hij heeft last van te veel drinken', 'Hij heeft een mannetjeskat', 'Hij is chagrijnig opgestaan', 'Hij heeft een verkoudheid'] },
+  { type: 'mc', q: 'Wat bedoelt een Brabander met "ge zijt"?', a: ['Jij bent', 'Het is zo', 'Ga zitten', 'Gezellig'] },
+  { type: 'mc', q: 'Welke rivier stroomt door Nijmegen?', a: ['De Waal', 'De Maas', 'De IJssel', 'De Lek'] },
+  { type: 'mc', q: 'Hoe heet het grootste meer van Nederland?', a: ['Het IJsselmeer', 'Het Markermeer', 'Het Veluwemeer', 'De Loosdrechtse Plassen'] },
+  { type: 'num', q: 'In welk jaar werd de Afsluitdijk gesloten?', answer: 1932 },
+  { type: 'num', q: 'Hoe lang is de Afsluitdijk?', answer: 32, unit: 'km' },
+  { type: 'num', q: 'Hoeveel inwoners heeft Nederland ongeveer?', answer: 18, unit: 'miljoen', fact: 'Ruim 18 miljoen (2025).' },
+  { type: 'num', q: 'Hoeveel fietsen zijn er ongeveer in Nederland?', answer: 23, unit: 'miljoen', fact: 'Meer fietsen dan inwoners: zo\'n 23 miljoen.' },
+  { type: 'num', q: 'Hoeveel meter onder NAP ligt Schiphol ongeveer?', answer: 3, unit: 'meter', fact: 'Zo\'n 3 meter: vliegen vanaf de bodem van een voormalig meer.' },
+  { type: 'bluff', q: 'De Nederlandse vlag was oorspronkelijk niet rood-wit-blauw maar ___-wit-blauw.', answer: 'oranje', decoys: ['geel', 'groen', 'zwart'], fact: 'De Prinsenvlag. Het oranje verkleurde snel en werd later rood.' },
+  { type: 'bluff', q: 'De naam "Holland" komt waarschijnlijk van "holt land", wat betekent: ___.', answer: 'bosland', accept: ['houtland', 'hout land', 'bos land', 'land met bomen'], decoys: ['hol land', 'laag land', 'nat land'], fact: '"Holt" is een oud woord voor hout of bos. "Hol land" is een populaire maar foute uitleg.' },
+  { type: 'bluff', q: 'Het Nederlandse woord "koekje" leeft voort in het Amerikaans-Engelse woord ___.', answer: 'cookie', decoys: ['cake', 'biscuit', 'snack'], fact: 'Ook "boss" (baas) en "Yankee" (mogelijk van Jan Kees) komen uit het Nederlands.' },
+  {
+    type: 'order', q: 'Zet deze steden op aantal inwoners', lo: 'Kleinste', hi: 'Grootste', fmt: '± {v}',
+    items: [['Tilburg', 229000], ['Eindhoven', 246000], ['Utrecht', 374000], ['Den Haag', 560000], ['Rotterdam', 670000], ['Amsterdam', 930000], ['Maastricht', 122000]],
+  },
+  {
+    type: 'order', q: 'Zet deze provincies op oppervlakte (land + water)', lo: 'Kleinste', hi: 'Grootste', fmt: '{v} km²',
+    items: [['Utrecht', 1560], ['Limburg', 2210], ['Drenthe', 2680], ['Zeeland', 2930], ['Gelderland', 5140], ['Friesland', 5750]],
+  },
+]);
+
+GN.addQuestions('geschiedenis', [
+  { type: 'mc', q: 'In welk jaar viel de Berlijnse Muur?', a: ['1989', '1991', '1987', '1990'] },
+  { type: 'mc', q: 'Wie zette als eerste mens voet op de maan?', a: ['Neil Armstrong', 'Buzz Aldrin', 'Joeri Gagarin', 'Michael Collins'] },
+  { type: 'mc', q: 'Welke Nederlander was in 1642 de eerste Europeaan die Nieuw-Zeeland bereikte?', a: ['Abel Tasman', 'Willem Barentsz', 'Jan van Riebeeck', 'Piet Hein'] },
+  { type: 'mc', q: 'Hoe heette het schip waarmee de Pilgrims in 1620 naar Amerika voeren?', a: ['Mayflower', 'Santa Maria', 'Batavia', 'Endeavour'] },
+  { type: 'mc', q: 'Welk land schonk de Verenigde Staten het Vrijheidsbeeld?', a: ['Frankrijk', 'Engeland', 'Spanje', 'Nederland'] },
+  { type: 'mc', q: 'Welke handelscompagnie werd in 1602 opgericht?', a: ['De VOC', 'De WIC', 'De Hanze', 'De Oost-Indische Bank'] },
+  { type: 'mc', q: 'Wiens graf werd in 1922 vrijwel intact ontdekt in Egypte?', a: ['Toetanchamon', 'Ramses II', 'Cheops', 'Cleopatra'] },
+  { type: 'mc', q: 'Hoe lang duurde de Honderdjarige Oorlog echt?', a: ['116 jaar', '100 jaar', '99 jaar', '150 jaar'], d: 2 },
+  { type: 'mc', q: 'Hoe lang duurde de kortste oorlog ooit (Brittannië tegen Zanzibar, 1896)?', a: ['Minder dan een uur', 'Een dag', 'Een week', 'Drie dagen'], fact: 'Zo\'n 38 tot 45 minuten.', d: 2 },
+  { type: 'mc', q: 'Welke Romeinse keizer wilde volgens de verhalen zijn paard tot consul benoemen?', a: ['Caligula', 'Nero', 'Augustus', 'Hadrianus'], d: 2 },
+  { type: 'mc', q: 'Welke stad werd in 79 na Christus bedolven door de Vesuvius?', a: ['Pompeii', 'Rome', 'Napels', 'Florence'] },
+  { type: 'mc', q: 'Wie werd in 1815 de eerste koning van het Koninkrijk der Nederlanden?', a: ['Willem I', 'Willem van Oranje', 'Lodewijk Napoleon', 'Willem II'], d: 2, fact: 'Lodewijk Napoleon was eerder (1806) koning van Holland.' },
+  { type: 'mc', q: 'Wie schilderde De Nachtwacht?', a: ['Rembrandt', 'Vermeer', 'Frans Hals', 'Jan Steen'] },
+  { type: 'mc', q: 'Welk volk bouwde Machu Picchu?', a: ['De Inca\'s', 'De Azteken', 'De Maya\'s', 'De Olmeken'] },
+  { type: 'mc', q: 'Wie was de eerste vrouw in de ruimte?', a: ['Valentina Teresjkova', 'Sally Ride', 'Laika', 'Svetlana Savitskaja'], d: 2 },
+  { type: 'mc', q: 'In welke stad werd John F. Kennedy in 1963 doodgeschoten?', a: ['Dallas', 'Washington', 'New York', 'Chicago'] },
+  { type: 'num', q: 'In welk jaar zonk de Titanic?', answer: 1912 },
+  { type: 'num', q: 'In welk jaar landde de eerste mens op de maan?', answer: 1969 },
+  { type: 'num', q: 'Hoe oud werd Toetanchamon ongeveer?', answer: 19, unit: 'jaar', fact: 'Hij werd 18 of 19 jaar oud.' },
+  { type: 'num', q: 'Hoeveel jaar regeerde koningin Victoria van Engeland?', answer: 63, unit: 'jaar', fact: 'Van 1837 tot 1901.' },
+  { type: 'bluff', q: 'Napoleon werd ooit "aangevallen" door een horde ___.', answer: 'konijnen', decoys: ['kippen', 'ganzen', 'apen'], fact: 'Bij een jachtpartij werden tamme konijnen losgelaten die op hem af renden in plaats van weg.' },
+  { type: 'bluff', q: 'Sommige Romeinen gebruikten ___ als mondwater.', answer: 'urine', accept: ['plas', 'pis'], decoys: ['azijn', 'zeewater', 'olijfolie'], fact: 'Door de ammoniak. Er werd zelfs belasting op urine geheven.' },
+  { type: 'bluff', q: 'Cleopatra leefde dichter bij ___ dan bij de bouw van de piramide van Gizeh.', answer: 'de maanlanding', accept: ['maanlanding', 'de eerste maanlanding'], decoys: ['de geboorte van Jezus', 'de val van Rome', 'de uitvinding van het wiel'], fact: 'De piramide is ongeveer 2.500 jaar ouder dan Cleopatra.' },
+  {
+    type: 'order', q: 'Zet deze uitvindingen in de tijd', lo: 'Oudst', hi: 'Nieuwst',
+    items: [['De telefoon', 1876], ['Het vliegtuig', 1903], ['De televisie', 1927], ['Het world wide web', 1989], ['De iPhone', 2007], ['De boekdrukkunst', 1450, '± 1450']],
+  },
+]);
+
+GN.addQuestions('aardrijkskunde', [
+  { type: 'mc', q: 'Wat is de langste rivier van Europa?', a: ['De Wolga', 'De Donau', 'De Rijn', 'De Loire'] },
+  { type: 'mc', q: 'Welk land heeft de meeste tijdzones (overzeese gebieden meegeteld)?', a: ['Frankrijk', 'Rusland', 'De Verenigde Staten', 'China'], d: 3, fact: 'Dankzij gebieden als Frans-Polynesië en Réunion: 12 tijdzones.' },
+  { type: 'mc', q: 'Wat is het kleinste land ter wereld?', a: ['Vaticaanstad', 'Monaco', 'San Marino', 'Liechtenstein'] },
+  { type: 'mc', q: 'In welk land ligt Machu Picchu?', a: ['Peru', 'Bolivia', 'Chili', 'Mexico'] },
+  { type: 'mc', q: 'Welke zee is zo zout dat je er vanzelf in blijft drijven?', a: ['De Dode Zee', 'De Rode Zee', 'De Zwarte Zee', 'De Kaspische Zee'] },
+  { type: 'mc', q: 'Aan hoeveel landen grenst Nederland over land?', a: ['2', '3', '1', '4'] },
+  { type: 'mc', q: 'Welk land heeft de meeste inwoners?', a: ['India', 'China', 'De Verenigde Staten', 'Indonesië'], fact: 'India haalde China in 2023 in.' },
+  { type: 'mc', q: 'Door hoeveel landen stroomt de Donau?', a: ['10', '6', '4', '14'], d: 3, fact: 'Meer landen dan welke rivier ook.' },
+  { type: 'mc', q: 'Welk land heeft de langste kustlijn?', a: ['Canada', 'Noorwegen', 'Australië', 'Rusland'], d: 2 },
+  { type: 'mc', q: 'Op welk continent ligt de Atacama, de droogste woestijn (buiten de polen)?', a: ['Zuid-Amerika', 'Afrika', 'Azië', 'Australië'], d: 2 },
+  { type: 'mc', q: 'Welk land wordt ook wel "het land van de duizend meren" genoemd?', a: ['Finland', 'Zweden', 'Canada', 'Zwitserland'] },
+  { type: 'mc', q: 'Welke stad ligt op twee continenten?', a: ['Istanbul', 'Moskou', 'Caïro', 'Athene'] },
+  { type: 'mc', q: 'Wat is de grootste oceaan?', a: ['De Grote Oceaan', 'De Atlantische Oceaan', 'De Indische Oceaan', 'De Noordelijke IJszee'] },
+  { type: 'mc', q: 'Wat is het grootste eiland ter wereld (continenten niet meegeteld)?', a: ['Groenland', 'Madagaskar', 'Borneo', 'IJsland'] },
+  { type: 'num', q: 'Hoe hoog is de Mount Everest?', answer: 8849, unit: 'meter' },
+  { type: 'num', q: 'Hoeveel landen zijn lid van de Verenigde Naties?', answer: 193 },
+  { type: 'num', q: 'Hoe lang is de Nijl ongeveer?', answer: 6650, unit: 'km', fact: 'De precieze lengte is omstreden: ergens tussen 6.650 en 7.000 km.' },
+  { type: 'num', q: 'Hoe diep is de Marianentrog ongeveer?', answer: 10935, unit: 'meter', fact: 'Bijna 11 kilometer: de Mount Everest past er ruim in.' },
+  { type: 'bluff', q: 'In Noorwegen ligt een dorpje dat ___ heet.', answer: 'Hell', decoys: ['Snot', 'Nergens', 'Oeps'], fact: 'Hell betekent daar iets als "rots" of "grot".' },
+  { type: 'bluff', q: 'De hoofdstad van Bhutan heet ___.', answer: 'Thimphu', decoys: ['Paro', 'Lhamo', 'Dzongkar'] },
+  { type: 'bluff', q: 'De volledige naam van het Welshe dorp Llanfair PG telt maar liefst ___ letters.', answer: '58', accept: ['achtenvijftig'], decoys: ['23', '41', '104'], fact: 'Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch.' },
+  {
+    type: 'order', q: 'Zet deze landen op oppervlakte', lo: 'Kleinste', hi: 'Grootste', fmt: '{v} km²',
+    items: [['België', 30689], ['Nederland', 41850], ['Duitsland', 357588], ['Zweden', 450295], ['Spanje', 505990], ['Frankrijk (Europees deel)', 551695]],
+  },
+  {
+    type: 'order', q: 'Zet deze bergen op hoogte', lo: 'Laagste', hi: 'Hoogste', fmt: '{v} m',
+    items: [['Vaalserberg', 322], ['Zugspitze', 2962], ['Mont Blanc', 4806], ['Kilimanjaro', 5895], ['K2', 8611], ['Mount Everest', 8849]],
+  },
+]);
