@@ -16,6 +16,9 @@
     { id: 'film', name: 'Films & series', emoji: '🎬', group: 'Kennis', spice: 1 },
     { id: 'games', name: 'Games', emoji: '🎮', group: 'Kennis', spice: 1 },
     { id: 'muziek', name: 'Muziek', emoji: '🎵', group: 'Kennis', spice: 1 },
+    { id: 'kunst', name: 'Kunst & cultuur', emoji: '🖼️', group: 'Kennis', spice: 1 },
+    { id: 'merken', name: 'Merken & bedrijven', emoji: '🏷️', group: 'Kennis', spice: 1 },
+    { id: 'reizen', name: 'Reizen & vakantie', emoji: '✈️', group: 'Kennis', spice: 1 },
     // Nerd
     { id: 'fantasy', name: 'Fantasy (Tolkien, Potter & co)', emoji: '🧙', group: 'Nerd', spice: 1 },
     { id: 'scifi', name: 'Sci-fi (Dune, Star Wars & co)', emoji: '🚀', group: 'Nerd', spice: 1 },
@@ -31,6 +34,8 @@
     { id: 'uitvindingen', name: 'Mislukte uitvindingen', emoji: '🛠️', group: 'Grappig & raar', spice: 1 },
     { id: 'internet', name: 'Internet & memes', emoji: '📱', group: 'Grappig & raar', spice: 1 },
     { id: 'records', name: 'Gekke records', emoji: '🏆', group: 'Grappig & raar', spice: 1 },
+    { id: 'criminelen', name: 'Domme criminelen', emoji: '🚔', group: 'Grappig & raar', spice: 1 },
+    { id: 'bier', name: 'Bier & kroeg', emoji: '🍻', group: 'Grappig & raar', spice: 1 },
     // Donker
     { id: 'morbide', name: 'Morbide weetjes', emoji: '💀', group: 'Donker', spice: 2 },
     { id: 'middeleeuwen', name: 'Middeleeuwse ellende', emoji: '🐀', group: 'Donker', spice: 2 },
@@ -40,10 +45,14 @@
     { id: 'hoaxes', name: 'Hoaxes & complotten', emoji: '🛸', group: 'Donker', spice: 2 },
     { id: 'spook', name: 'Spookverhalen & urban legends', emoji: '👻', group: 'Donker', spice: 2 },
     { id: 'schandalen', name: 'Beruchte schandalen', emoji: '🗞️', group: 'Donker', spice: 2 },
+    { id: 'mysteries', name: 'Onopgeloste mysteries', emoji: '🔍', group: 'Donker', spice: 2 },
+    { id: 'oorlog', name: 'Oorlog & spionage', emoji: '🕵️', group: 'Donker', spice: 2 },
+    { id: 'kater', name: 'Kater & feestjes', emoji: '🥴', group: 'Pittig', spice: 2 },
     // Stout
     { id: 'lichaam', name: 'Het lichaam', emoji: '🍑', group: 'Stout', spice: 3 },
     { id: 'liefde', name: 'Liefde & seks', emoji: '🌶️', group: 'Stout', spice: 3 },
     { id: 'dating', name: 'Dating-ellende', emoji: '💔', group: 'Stout', spice: 3 },
+    { id: 'stoutgeschiedenis', name: 'Stoute geschiedenis', emoji: '👑', group: 'Stout', spice: 3 },
     ];
   GN.CAT = {};
   GN.CATEGORIES.forEach((c) => (GN.CAT[c.id] = c));

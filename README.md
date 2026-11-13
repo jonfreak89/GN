@@ -57,6 +57,8 @@ Extra's: de laatste plaats kiest de categorie, power-ups (Dubbel, 50/50, Stelen,
 
 **Spice levels:** 😇 Braaf (kennis en rare weetjes) · 😈 Pittig (+ donkere humor) · 🌶️ Stout (+ 18+).
 
+**41 categorieën**, van Kennis (o.a. Nederland, geschiedenis, kunst & cultuur, merken & bedrijven, reizen) en Nerd (fantasy, sci-fi, superhelden) tot Nostalgie, Grappig & raar (o.a. domme criminelen, bier & kroeg), Donker (o.a. onopgeloste mysteries, oorlog & spionage), Pittig (kater & feestjes) en Stout (o.a. stoute geschiedenis). Samen zo'n 1.770 vaste vragen, plus gegenereerde.
+
 **Nooit dezelfde vragen:** de TV onthoudt welke vragen al geweest zijn en herhaalt pas als een categorie op is. Schatten, volgorde en hoofdsteden worden ook gegenereerd uit datatabellen (duizenden combinaties).
 
 ## Vragen toevoegen
