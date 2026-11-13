@@ -153,6 +153,193 @@
     } catch (e) {}
   }
 
+  // ---------- show: Joep, geluid, achtergrond ----------
+  const Show = GN.Show;
+  const Sound = GN.Sound;
+  Show.mountBg(document.body);
+  Show.mount(document.body);
+  const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
+  const fill = (t, o = {}) => t.replace(/\{(\w+)\}/g, (m, k) => (o[k] != null ? o[k] : m));
+  const LINES = {
+    empty: ['Pak je telefoon en scan de code! Ik bijt niet.', 'Nog niemand? Dan begin ik alvast in mijn eentje te zingen…', 'Welkom bij Game Night! Scan de QR-code om mee te doen.'],
+    join: ['Welkom {naam}! Ga lekker zitten.', 'Hé {naam}! Leuk dat je er bent.', 'Daar is {naam}! Het feest kan beginnen.', '{naam} is binnen. Iemand een drankje voor {naam}?', 'Kijk eens wie er is: {naam}!', '{naam}! Ik had al gehoord dat jij slim was. We gaan het zien…'],
+    start: ['Daar gaan we! Telefoons in de aanslag.', 'Goedenavond en welkom bij Game Night! Ik ben Joep, jullie presentator.', 'Lichten uit, spotjes aan. We beginnen!'],
+    intro: ['Volgende ronde! Opletten nu.', 'Daar komt-ie…', 'Deze vind ik zelf altijd leuk.', 'Nieuwe ronde, nieuwe kansen.', 'Ogen op de TV, duimen op de telefoon!'],
+    round: {
+      bluff: ['Liegen mag. Sterker nog: moet.', 'Tijd om je pokerface op te zetten.'],
+      echt: ['Echt gebeurd, ik zweer het. Nou ja, één van de antwoorden dan.'],
+      teken: ['Geen Rembrandt? Geeft niks. Ik ook niet.'],
+      persoonlijk: ['Nu wordt het persoonlijk… Eerlijk zijn, hè!', 'Ik ben benieuwd wat we vanavond over jullie leren.'],
+      leugen: ['Tijd om elkaar recht in de ogen te liegen.'],
+      lingo: ['Groen is goed, geel is bijna. Succes!'],
+      hl: ['Hoger of lager? Volg je onderbuik.'],
+      puzzel: ['Twaalf woorden, drie verbanden. Rustig blijven ademen.'],
+      invul: ['Vul maar in… Ik verklap nog niks.'],
+      ketting: ['Samen schrijven we een meesterwerk. Of niet.'],
+      top5: ['Hete stoel! Laat maar zien hoe goed jullie elkaar kennen.'],
+      wiezei: ['Anoniem… dat denken ze tenminste.'],
+      final: ['De finale! Alles of niets.', 'Laatste kans. Durf jij alles in te zetten?'],
+    },
+    wait: ['We wachten nog op {naam}… 🥱', '{naam}, de rest zit te wachten hoor!', 'Neem je tijd, {naam}. Maar niet té veel.', 'Tik tak, {naam}…'],
+    none: ['Niemand?! Ik schaam me een beetje voor jullie.', 'Nul goed. Echt nul. Knap hoor.', 'Oei. Die was blijkbaar te moeilijk.', 'Zelfs ik wist het. En ik ben een maan.'],
+    one: ['Alleen {naam}! Slimmerik.', 'Alleen {naam} wist het. Applaus!', '{naam} houdt de eer hoog.'],
+    all: ['Iedereen goed! Te makkelijk? Volgende wordt erger.', 'Allemaal goed. Ik ben trots op jullie.', 'Wat een slimme groep, zeg!'],
+    some: ['Netjes!', 'Niet slecht, niet slecht.', 'Een paar slimmeriken in de zaal.', 'Punten voor de kenners!'],
+    fooled: ['{naam} luisde er {n} in. Eng goed.', 'Pas op voor {naam}, die liegt alsof het gedrukt staat.'],
+    lead: ['{naam} staat bovenaan. Iemand moet daar iets aan doen.', '{naam} aan kop! Lekker bezig.', 'Koploper: {naam}. Nog wel…'],
+    last: ['{naam} staat laatst… maar de avond is nog jong.', 'Kop op, {naam}. Comebacks zijn het leukst.', '{naam} onderaan. Ik geloof nog in je!'],
+    climb: ['{naam} klimt {n} plekken! Wat een sprong.', 'Kijk {naam} gaan! {n} plekken omhoog.'],
+    highlights: ['Even terugkijken… de hoogtepunten van de avond!'],
+    end: ['{naam} wint! Applaus, applaus!', 'En de winnaar is… {naam}! Gefeliciteerd!', '{naam} is de slimste van de avond. Voorlopig.'],
+    pause: ['Even pauze. Iemand nog een drankje?'],
+  };
+  const LINE_SPEAK = new Set(['lobby', 'scores', 'end', 'highlights']);
+  function host(key, o, face, kind) {
+    const list = Array.isArray(key) ? key : LINES[key];
+    if (!list || !list.length) return;
+    const t = fill(pickOne(list), o);
+    Show.say(t, face);
+    if (kind && LINE_SPEAK.has(kind)) say(t);
+  }
+  // geluid aanzetten kan alleen na een klik of toets (browserregel)
+  const soundHint = document.createElement('button');
+  soundHint.className = 'soundhint';
+  soundHint.innerHTML = '🔇 Klik voor geluid';
+  soundHint.onclick = () => Sound.unlock();
+  document.body.appendChild(soundHint);
+  Sound.onUnlock(() => { soundHint.remove(); applyMood(lastView, true); });
+  const ANSWERING = new Set(['catpick', 'mc', 'tf', 'num', 'bet', 'bluffWrite', 'bluffVote', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'wzGuess', 'hl', 'lingo', 'puzzel', 'tkDraw', 'tkFake', 'tkVote', 'lgWrite', 'lgGuess', 'top5', 'roll', 'ivWrite', 'ivVote', 'ktWrite', 'ktVote', 'wager', 'final']);
+  function moodFor(v) {
+    if (!v) return 'off';
+    if (v.paused) return 'calm';
+    if (v.kind === 'lobby') return 'lobby';
+    if (v.kind === 'end' || v.kind === 'highlights') return 'party';
+    if (v.kind === 'intro' || v.kind === 'scores' || v.kind === 'board') return 'reveal';
+    if (v.kind === 'reveal') return 'reveal';
+    return 'think';
+  }
+  let moodNow = null;
+  function applyMood(v, force) {
+    if (!v) return;
+    Sound.setEnabled(v.settings.music !== false, v.settings.sfx !== false);
+    Sound.setTheme(v.theme ? v.theme.id : '');
+    const m = moodFor(v);
+    if (m !== moodNow || force) { moodNow = m; Sound.mood(m); }
+  }
+  // tussenstand: vorige stand onthouden voor de inhaal-animatie
+  let scoreMemo = {};
+  let lobbyCount = 0;
+  let nudged = 0;
+  let answeredCount = 0;
+  let hlTimer = null;
+  function onStep(v, prev) {
+    const sfx = Sound.sfx;
+    const m = pmap(v);
+    const ps = v.players.filter((p) => p.playing);
+    const k = v.kind;
+    const sid = v.stepId;
+    const still = () => lastView && lastView.stepId === sid;
+    const later = (fn, ms) => setTimeout(() => { if (still()) fn(); }, ms);
+    stage.classList.toggle('revealing', k === 'reveal');
+    Show.setBg(k === 'lobby' ? 'lobby' : k === 'end' || k === 'highlights' ? 'end' : (v.round && v.round.type) || 'lobby', k === 'reveal');
+    clearInterval(hlTimer);
+    if (k !== 'lobby') Show.hush();
+    answeredCount = 0;
+    nudged = 0;
+    if (k === 'lobby') {
+      if (!v.players.length) host('empty', {}, 'happy');
+      lobbyCount = v.players.length;
+      scoreMemo = {};
+      return;
+    }
+    if (k === 'intro') {
+      if (v.roundNo === 1) { scoreMemo = {}; host('start', {}, 'party'); }
+      else host((LINES.round[v.roundType] && Math.random() < 0.7) ? LINES.round[v.roundType] : 'intro', {}, 'happy');
+      sfx('whoosh'); sfx('boing', 0.25);
+      return;
+    }
+    if (k === 'reveal') {
+      const r = v.reveal;
+      const gains = r.gains || {};
+      const pos = ps.filter((p) => gains[p.id] > 0);
+      const judged = !['poll', 'wie', 'ken', 'iv', 'kt', 'top5'].includes(r.of) || r.of === 'ken';
+      sfx('drumroll', 0, 1.15);
+      sfx('crash', 1.2);
+      if (judged) {
+        if (pos.length) { sfx('ding', 1.25); later(() => Show.confetti(pos.length === ps.length ? 160 : 70), 1300); }
+        else if (ps.length) sfx('aww', 1.25);
+      } else later(() => Show.confetti(50), 1300);
+      const lines = () => {
+        if (r.of === 'bluff' || r.of === 'tk') {
+          const fb = {};
+          Object.values(r.votes || {}).forEach((i) => { const o = r.options[i]; if (o && i !== r.truth) (o.authors || []).forEach((a) => (fb[a] = (fb[a] || 0) + 1)); });
+          const top = Object.entries(fb).sort((a, b) => b[1] - a[1])[0];
+          if (top && top[1] >= 2 && m[top[0]]) return host('fooled', { naam: m[top[0]].name, n: top[1] }, 'shock');
+        }
+        if (!judged || ps.length < 2) return Math.random() < 0.4 ? host('some', {}, 'happy') : null;
+        if (!pos.length) return host('none', {}, 'shock');
+        if (pos.length === ps.length) return host('all', {}, 'happy');
+        if (pos.length === 1) return host('one', { naam: pos[0].name }, 'happy');
+        if (Math.random() < 0.5) host('some', {}, 'happy');
+      };
+      later(lines, 1700);
+      return;
+    }
+    if (k === 'scores') {
+      sfx('swoosh'); sfx('cash', 0.9);
+      const sorted = ps.slice().sort((a, b) => b.score - a.score);
+      const climber = climbInfo;
+      later(() => {
+        if (climber) host('climb', { naam: climber.p.name, n: climber.d }, 'shock', 'scores');
+        else if (sorted.length > 2 && Math.random() < 0.5) host('last', { naam: sorted[sorted.length - 1].name }, 'happy', 'scores');
+        else if (sorted[0]) host('lead', { naam: sorted[0].name }, 'happy', 'scores');
+      }, 1800);
+      return;
+    }
+    if (k === 'highlights') {
+      host('highlights', {}, 'party', 'highlights');
+      sfx('fanfare');
+      startHighlights(v);
+      return;
+    }
+    if (k === 'end') {
+      const w = v.ranking && m[v.ranking[0]];
+      sfx('fanfare'); sfx('applause', 0.6);
+      Show.confetti(220, { power: 1.3 });
+      setTimeout(() => Show.confetti(160, { x: 0.2, power: 1.1 }), 900);
+      setTimeout(() => Show.confetti(160, { x: 0.8, power: 1.1 }), 1500);
+      const tw = v.teamRanking && v.teams ? v.teams.find((t) => t.id === v.teamRanking[0]) : null;
+      if (tw || w) host('end', { naam: tw ? tw.name : w.name }, 'party', 'end');
+      return;
+    }
+    if (k === 'board') { sfx('dice'); if (v.winner) { sfx('fanfare', 1.5); later(() => Show.confetti(160), 1600); } return; }
+    if (k === 'roll') { sfx('boing'); return; }
+    if (k === 'final' || k === 'wager') { if (prev !== 'wager' && LINES.round.final && k === 'wager') host(LINES.round.final, {}, 'shock'); sfx('whoosh'); return; }
+    if (ANSWERING.has(k)) sfx('whoosh');
+  }
+  function onLive(v) {
+    if (v.kind === 'lobby') {
+      if (v.players.length > lobbyCount) {
+        const p = v.players[v.players.length - 1];
+        Sound.sfx('pop', 0, v.players.length);
+        if (p && !p.isBot) host('join', { naam: p.name }, 'happy', 'lobby');
+      }
+      lobbyCount = v.players.length;
+      return;
+    }
+    const n = v.answered.filter((id) => v.need.includes(id)).length;
+    if (n > answeredCount) { Sound.sfx(v.kind === 'roll' ? 'dice' : 'pop', 0, n); answeredCount = n; }
+    // nog één iemand bezig en de tijd loopt op: plagen
+    if (ANSWERING.has(v.kind) && v.deadline && v.duration && !nudged) {
+      const left = v.need.filter((id) => !v.answered.includes(id));
+      const frac = (v.deadline - Date.now()) / (v.duration * 1000);
+      if (left.length === 1 && v.need.length > 1 && frac < 0.45 && frac > 0.08) {
+        const p = v.players.find((x) => x.id === left[0]);
+        if (p && !p.isBot) { nudged = 1; host('wait', { naam: p.name }, 'smile'); }
+      }
+    }
+  }
+
   // ---------- render ----------
   const stage = $('#stage');
   const board = $('#board');
@@ -176,20 +363,26 @@
     if (v.paused) {
       const rec = restored ? `Het spel is hersteld. Telefoons verbinden vanzelf opnieuw (code <b>${code}</b>). ` : '';
       const html = `<div class="box"><div class="big">⏸️</div><h2>${restored ? 'Spel hersteld' : 'Pauze'}</h2><p>${rec}De spelleider 👑 hervat vanaf zijn telefoon.</p></div>`;
-      if (overlay.dataset.html !== html) { overlay.innerHTML = html; overlay.dataset.html = html; }
+      if (overlay.dataset.html !== html) { overlay.innerHTML = html; overlay.dataset.html = html; Show.hush(); }
     } else restored = false;
     applyTheme(v.theme);
+    applyMood(v);
+    document.body.classList.toggle('bigtext', !!v.settings.bigText);
     const key = v.kind + ':' + v.stepId;
     if (key !== shownKey) {
+      const prevKind = shownKey ? shownKey.split(':')[0] : null;
       shownKey = key;
       stage.innerHTML = VIEWS[v.kind] ? VIEWS[v.kind](v) : '';
       if (v.kind === 'board') animatePawns(v);
+      if (v.kind === 'scores') animateScores(v);
+      try { onStep(v, prevKind); } catch (e) { console.warn(e); }
       const qr = $('.qr', stage);
       if (qr) drawQr(qr);
       speakFor(v);
     } else {
       updateLive(v);
     }
+    try { onLive(v); } catch (e) { console.warn(e); }
   }
 
   let themeNow = null;
@@ -285,7 +478,7 @@
 
   function renderTop() {
     const v = lastView;
-    const r = v && v.round && v.kind !== 'lobby' && v.kind !== 'end' ? v.round : null;
+    const r = v && v.round && !['lobby', 'end', 'highlights'].includes(v.kind) ? v.round : null;
     const stat = { online: '', connecting: 'verbinden…', reconnecting: 'opnieuw verbinden…', 'waiting-id': 'code vrijmaken…', taken: 'code bezet: herlaad', nolib: 'geen internet?' }[netStatus] || '';
     $('#roundinfo').innerHTML = r
       ? `<span class="chip">${r.emoji} ${esc(r.title)}</span><span>Ronde ${r.roundNo}/${r.rounds}</span>${v.qno ? `<span>· Vraag ${v.qno}/${v.qcount}</span>` : ''}`
@@ -307,7 +500,8 @@
         <span class="av">${p.avatar}</span><span class="nm">${esc(p.name)}</span>${v.board ? `<span class="bpos">🪿${p.pos}</span>` : ''}
         <span class="sc">${p.score}${g ? ` <small style="color:${g > 0 ? 'var(--mint)' : 'var(--bad)'}">${g > 0 ? '+' : ''}${g}</small>` : ''}</span></div>`;
     };
-    const html = v.kind === 'end' ? '' : v.teams
+    board.classList.toggle('many', players.length > 6);
+    const html = v.kind === 'end' || v.kind === 'scores' ? '' : v.teams
       ? v.teams.map((t) => `<div class="teamgroup" style="--t:${t.color}"><div class="teamhead">${t.emoji} ${esc(t.name)} <b>${t.score}</b></div><div class="teamchips">${players.filter((p) => p.team === t.id).map(chip).join('') || '<span class="sub">nog leeg</span>'}</div></div>`).join('')
       : players.map(chip).join('');
     if (board.dataset.html !== html) { board.innerHTML = html; board.dataset.html = html; }
@@ -381,13 +575,16 @@
         </div>
       </div>`,
 
-    intro: (v) => `
-      <div class="intro center">
+    intro: (v) => {
+      const how = v.howto && GN.HOWTO[v.roundType];
+      return `
+      <div class="intro center ${how ? 'withhow' : ''}">
         <div class="big">${v.emoji}</div>
         <div class="rno">Ronde ${v.roundNo} van ${v.rounds}</div>
         <h2 class="pop">${esc(v.title)}</h2>
-        <p class="rise">${esc(v.desc)}</p>
-      </div>`,
+        ${how ? `<div class="howto"><div class="howhead">Zo werkt het</div><div class="howcards">${how.map(([e, t], i) => `<div class="howcard" style="animation-delay:${0.8 + i * 1.1}s"><span class="n">${i + 1}</span><span class="e">${e}</span><span class="t">${esc(t)}</span></div>`).join('')}</div></div>` : `<p class="rise">${esc(v.desc)}</p>`}
+      </div>`;
+    },
 
     catpick: (v) => {
       const m = pmap(v);
@@ -620,9 +817,38 @@
       return `<div class="panel center">
         <div class="intro"><h2 style="font-size:3.2em;margin-bottom:.5em">Tussenstand 📊</h2></div>
         ${v.teams ? `<div class="teamscores">${v.teams.slice().sort((a, b) => b.score - a.score).map((t, i) => `<div class="tscore pop" style="--t:${t.color};animation-delay:${i * 0.2}s"><span class="e">${t.emoji}</span><span>${esc(t.name)}</span><b>${t.score}</b></div>`).join('')}</div>` : ''}
-        <div class="scoreboard">${ps.map((p, i) => `<div class="srow" style="--c:${p.color};animation-delay:${(ps.length - i) * 0.12}s"><span class="pos">${i + 1}</span><span class="av">${p.avatar}</span><span class="nm">${esc(p.name)}</span><span class="sc">${p.score}</span></div>`).join('')}</div>
+        <div class="scoreboard flip ${ps.length > 5 ? 'two' : ''}">${ps.map((p, i) => `<div class="srow" data-id="${p.id}" style="--c:${p.color}"><span class="pos">${i + 1}</span><span class="av">${p.avatar}</span><span class="nm">${esc(p.name)}</span><span class="up"></span><span class="sc" data-to="${p.score}">${p.score}</span></div>`).join('')}</div>
         ${v.bonus && m[v.bonus.id] ? `<div class="bonus">${m[v.bonus.id].avatar} ${esc(m[v.bonus.id].name)} krijgt een troost-power-up: ${GN.POWERUPS[v.bonus.type].emoji} ${GN.POWERUPS[v.bonus.type].name}</div>` : ''}
         ${v.nextRound ? `<div class="note">Volgende ronde: <b>${esc(v.nextRound)}</b></div>` : ''}
+      </div>`;
+    },
+
+    highlights: (v) => {
+      const m = pmap(v);
+      const who = (ids) => (ids || []).map((id) => m[id]).filter(Boolean).map((p) => `<span class="hlwho" style="--c:${p.color}"><i>${p.avatar}</i>${esc(p.name)}</span>`).join(' ');
+      const T = {
+        bluff: ['🤥', 'Beste bluf', (h) => `luisde er ${h.n} in`],
+        echt: ['📰', 'Beste verzonnen einde', (h) => `${h.n} ${h.n === 1 ? 'persoon geloofde' : 'mensen geloofden'} het`],
+        tkfake: ['🎨', 'Beste nep-titel', (h) => `${h.n} ${h.n === 1 ? 'stem' : 'stemmen'}`],
+        tk: ['🖼️', 'Kunstwerk van de avond', (h) => `${h.n - 1} ${h.n - 1 === 1 ? 'persoon' : 'mensen'} herkende het`],
+        kt: ['📜', 'Beste verhaalzin', (h) => `${h.n} ${h.n === 1 ? 'stem' : 'stemmen'}`],
+        iv: ['📝', 'Grappigste invulwoord', (h) => `${h.n} ${h.n === 1 ? 'stem' : 'stemmen'}`],
+        lg: ['🤥', 'Beste leugen', (h) => `${h.n} ${h.n === 1 ? 'persoon' : 'mensen'} erin getrapt`],
+        wz: ['🗯️', 'Opvallendste antwoord', () => ''],
+        wie: ['🫵', 'Volgens de groep…', () => ''],
+        hard: ['🤯', 'Hier liep iedereen op stuk', () => ''],
+      };
+      return `<div class="hlshow">
+        <div class="rno">Terugblik</div>
+        <div class="hlslides">${v.slides.map((h, i) => {
+          const [e, title, sub] = T[h.k] || ['⭐', 'Hoogtepunt', () => ''];
+          const body = h.k === 'tk' ? `<div class="hldraw">${GN.drawingSvg(h.drawing)}</div><div class="hlq">“${esc(h.text)}”</div>`
+            : h.k === 'hard' ? `<div class="hlq">${esc(h.text)}</div><div class="hlbig small">${esc(h.answer)}</div>`
+            : h.k === 'wie' ? `<div class="hlq">${esc(h.text)}</div>`
+            : `${h.q ? `<div class="hlq">${fmtQ(h.q)}</div>` : ''}<div class="hlbig">“${esc(h.text)}”</div>`;
+          return `<div class="hlslide ${i === 0 ? 'on' : ''}"><div class="hltitle"><span>${e}</span>${title}</div>${body}<div class="hlby">${who(h.by)} <small>${esc(sub(h))}</small></div></div>`;
+        }).join('')}</div>
+        <div class="hldots">${v.slides.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div>
       </div>`;
     },
 
@@ -835,6 +1061,60 @@
     },
   };
 
+  let climbInfo = null;
+  function animateScores(v) {
+    climbInfo = null;
+    const rows = [...stage.querySelectorAll('.srow')];
+    if (!rows.length) return;
+    const ps = v.players.filter((p) => p.playing);
+    const had = Object.keys(scoreMemo).length > 0;
+    const oldOrder = ps.slice().sort((a, b) => (scoreMemo[b.id] || 0) - (scoreMemo[a.id] || 0)).map((p) => p.id);
+    if (had) ps.slice().sort((a, b) => b.score - a.score).forEach((p, i) => { const d = oldOrder.indexOf(p.id) - i; if (d >= 2 && (!climbInfo || d > climbInfo.d)) climbInfo = { p, d }; });
+    const rects = rows.map((r) => ({ x: r.offsetLeft, y: r.offsetTop }));
+    rows.forEach((row, i) => {
+      const id = row.dataset.id;
+      const oi = oldOrder.indexOf(id);
+      const sc = row.querySelector('.sc');
+      const from = scoreMemo[id] || 0;
+      const o = rects[oi] || rects[i];
+      row.style.transform = had ? `translate(${o.x - rects[i].x}px, ${o.y - rects[i].y}px)` : '';
+      sc.textContent = had ? from : sc.dataset.to;
+      const d = oi - i;
+      if (had && d > 0) row.querySelector('.up').textContent = '▲' + d;
+      if (had && d < 0) { row.querySelector('.up').textContent = '▼' + -d; row.querySelector('.up').classList.add('down'); }
+    });
+    const memo = {};
+    ps.forEach((p) => (memo[p.id] = p.score));
+    scoreMemo = memo;
+    if (!had) return;
+    setTimeout(() => {
+      rows.forEach((row) => { row.style.transition = 'transform 1s cubic-bezier(.5,0,.25,1.15)'; row.style.transform = ''; row.classList.add('moved'); });
+      const t0 = performance.now();
+      const nums = rows.map((row) => { const sc = row.querySelector('.sc'); return { sc, from: +sc.textContent, to: +sc.dataset.to }; });
+      const step = (t) => {
+        const k = Math.min(1, (t - t0) / 1100);
+        const e = 1 - Math.pow(1 - k, 3);
+        nums.forEach((n) => (n.sc.textContent = Math.round(n.from + (n.to - n.from) * e)));
+        if (k < 1 && nums[0].sc.isConnected) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }, 900);
+  }
+  function startHighlights(v) {
+    const slides = [...stage.querySelectorAll('.hlslide')];
+    const dots = [...stage.querySelectorAll('.hldots i')];
+    let i = 0;
+    clearInterval(hlTimer);
+    if (slides.length < 2) return;
+    hlTimer = setInterval(() => {
+      if (!slides[0].isConnected) return clearInterval(hlTimer);
+      slides[i].classList.remove('on'); dots[i].classList.remove('on');
+      i = (i + 1) % slides.length;
+      slides[i].classList.add('on'); dots[i].classList.add('on');
+      Sound.sfx('swoosh');
+    }, 7000);
+  }
+
   // ---------- timer ----------
   const timerEl = $('#timer');
   function frame() {
@@ -842,14 +1122,18 @@
     if (v && v.deadline && v.duration) {
       const ref = engine.s.paused ? engine.s.paused.at : Date.now();
       const left = Math.max(0, v.deadline - ref);
-      const showTimer = !['intro', 'reveal', 'scores'].includes(v.kind);
+      const showTimer = !['intro', 'reveal', 'scores', 'highlights', 'board'].includes(v.kind);
       timerEl.classList.toggle('hidden', !showTimer);
       if (showTimer) {
         const frac = left / (v.duration * 1000);
         const c = 2 * Math.PI * 26;
         $('.fg', timerEl).setAttribute('stroke-dasharray', c);
         $('.fg', timerEl).setAttribute('stroke-dashoffset', c * (1 - frac));
-        $('span', timerEl).textContent = Math.ceil(left / 1000);
+        const secs = Math.ceil(left / 1000);
+        if ($('span', timerEl).textContent !== String(secs)) {
+          $('span', timerEl).textContent = secs;
+          if (secs <= 5 && secs > 0 && !engine.s.paused && v.need.some((id) => !v.answered.includes(id))) Sound.sfx(secs <= 2 ? 'tock' : 'tick');
+        }
         timerEl.classList.toggle('low', left < 6000);
       }
     } else timerEl.classList.add('hidden');

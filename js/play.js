@@ -102,6 +102,7 @@
       const focusId = document.activeElement && document.activeElement.id;
       screen.innerHTML = (v.deadline && !['wait', 'result', 'lobby', 'end'].includes(v.screen) ? '<div class="tbar"><i id="tb"></i></div>' : '') + f(v);
       wire(v);
+      wireRoom();
       if (focusId && $('#' + focusId)) $('#' + focusId).focus();
     }
     renderSheet();
@@ -112,7 +113,7 @@
     bar.innerHTML = `<div class="me"><span class="av" style="--c:${me.color}">${me.avatar}</span>
       <div style="min-width:0"><div class="nm">${esc(me.name)}${me.isGm ? ' 👑' : ''}</div>
       <div>${teamBadge()}<span class="sc">${me.score}</span> <span class="rank">${me.playing && view.kind !== 'lobby' && me.rank ? `· ${me.rank}e plaats` : ''}${me.powerups && me.powerups.length ? ` · ${me.powerups.map((p) => GN.POWERUPS[p].emoji).join(' ')}` : ''}</span></div></div></div>
-      ${me.isGm && view.kind !== 'lobby' ? '<button class="iconbtn" id="gmbtn" aria-label="Spelleider">👑</button>' : ''}`;
+      ${me.isGm && view.kind !== 'lobby' ? '<button class="iconbtn gmbtn" id="gmbtn" aria-label="Bediening">👑<small>Bediening</small></button>' : ''}`;
     const g = $('#gmbtn');
     if (g) g.onclick = () => { sheet = 'gm'; renderSheet(); };
   }
@@ -168,7 +169,47 @@
   // ---------- schermen ----------
   const optionButtons = (opts, hidden = [], extra = () => '') =>
     `<div class="choices">${opts.map((o, i) => `<button class="ch" data-i="${i}" ${hidden.includes(i) ? 'disabled' : ''}><span class="l">${LETTERS[i]}</span><span>${esc(o)}</span>${extra(i)}</button>`).join('')}</div>`;
-  const waitBox = (title, sub = '') => `<div class="big">⏳</div><div class="title">${title}</div><p class="sub center">${sub}</p>`;
+  // ---------- wachtkamer: iets te doen terwijl je wacht ----------
+  const room = { tab: 'weetje', w: Math.floor(Math.random() * 1000), popped: 0 };
+  function waitRoom() {
+    if (!view || view.kind === 'lobby') return '';
+    const W = GN.WEETJES || [];
+    const me = view.me || {};
+    const st = me.stats || {};
+    let body = '';
+    if (room.tab === 'weetje' && W.length) body = `<div class="wrw">💡 ${esc(W[room.w % W.length])}</div><button class="wrnext" id="wrnext">Nog een weetje ›</button>`;
+    else if (room.tab === 'noppen') body = `<div class="noppen" id="noppen">${Array.from({ length: 24 }, (_, i) => `<button data-nop="${i}" aria-label="nop"></button>`).join('')}</div><div class="wrsmall" id="nopcount">${room.popped ? `${room.popped} noppen geknapt` : 'Knap ze allemaal!'}</div>`;
+    else body = `<div class="wrstats">
+        <div><b>${me.rank || '-'}<small>/${me.of || '-'}</small></b><span>plaats</span></div>
+        <div><b>${me.score || 0}</b><span>punten</span></div>
+        <div><b>${st.scored || 0}</b><span>keer gescoord</span></div>
+        <div><b>${st.best ? '+' + st.best : '-'}</b><span>beste moment</span></div>
+        ${st.fooled ? `<div><b>${st.fooled}</b><span>erin geluisd</span></div>` : ''}
+        ${st.powerups ? `<div><b>${st.powerups}</b><span>power-ups</span></div>` : ''}
+      </div>`;
+    return `<div class="waitroom"><div class="wrtabs">${[['weetje', '💡 Weetje'], ['noppen', '🫧 Noppen'], ['stats', '📊 Jij']].map(([k, t]) => `<button data-wr="${k}" class="${room.tab === k ? 'on' : ''}">${t}</button>`).join('')}</div><div class="wrbody">${body}</div></div>`;
+  }
+  function wireRoom() {
+    const box = $('.waitroom', screen);
+    if (!box) return;
+    box.querySelectorAll('[data-wr]').forEach((b) => (b.onclick = () => { room.tab = b.dataset.wr; box.outerHTML = waitRoom(); wireRoom(); }));
+    const nx = $('#wrnext', box);
+    if (nx) nx.onclick = () => { room.w++; box.outerHTML = waitRoom(); wireRoom(); };
+    box.querySelectorAll('[data-nop]').forEach((b) => (b.onclick = () => {
+      if (b.classList.contains('pop')) return;
+      b.classList.add('pop');
+      room.popped++;
+      try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
+      const c = $('#nopcount', box);
+      if (c) c.textContent = `${room.popped} noppen geknapt`;
+      if (!box.querySelector('[data-nop]:not(.pop)')) setTimeout(() => box.querySelectorAll('[data-nop]').forEach((x) => x.classList.remove('pop')), 600);
+    }));
+  }
+  const howtoHtml = (type) => {
+    const h = GN.HOWTO && GN.HOWTO[type];
+    return h ? `<div class="howto">${h.map(([e, t], i) => `<div class="howrow" style="animation-delay:${0.3 + i * 0.5}s"><span class="e">${e}</span><span>${esc(t)}</span></div>`).join('')}</div>` : '';
+  };
+  const waitBox = (title, sub = '') => `<div class="big">⏳</div><div class="title">${title}</div><p class="sub center">${sub}</p>${waitRoom()}`;
   const catLine = (v) => (v.cat ? `<div class="catline">${v.cat.emoji} ${esc(v.cat.name)}</div>` : '');
   const qHtml = (t) => `<div class="q">${esc(t).replace(/_{2,}/g, '<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>')}</div>`;
   const foot = (v) => {
@@ -205,7 +246,11 @@
         <div class="card"><div class="label">Rondes (tik om aan of uit te zetten)</div><div class="rounds">${v.roundList.map((r) => `<button data-round="${r.id}" class="${s.rounds && s.rounds[r.id] === false ? '' : 'on'}">${r.emoji} ${esc(r.title)}</button>`).join('')}${s.mode === 'bord' ? '' : '<button class="on" disabled>💰 De Finale</button>'}</div></div>
         <div class="card">
           <div class="toggle"><span>Ik speel zelf mee</span><button class="sw ${s.gmPlays ? 'on' : ''}" id="gmplays" aria-label="Meespelen"></button></div>
-          <div class="toggle"><span>TV leest vragen voor 🔊</span><button class="sw ${s.voice ? 'on' : ''}" id="voice" aria-label="Voorlezen"></button></div>
+          <div class="toggle"><span>TV leest vragen voor 🗣️</span><button class="sw ${s.voice ? 'on' : ''}" id="voice" aria-label="Voorlezen"></button></div>
+          <div class="toggle"><span>Muziek op de TV 🎵</span><button class="sw ${s.music !== false ? 'on' : ''}" data-set="music" aria-label="Muziek"></button></div>
+          <div class="toggle"><span>Geluidseffecten 🔔</span><button class="sw ${s.sfx !== false ? 'on' : ''}" data-set="sfx" aria-label="Geluidseffecten"></button></div>
+          <div class="toggle"><span>Grote tekst op de TV 🔠</span><button class="sw ${s.bigText ? 'on' : ''}" data-set="bigText" aria-label="Grote tekst"></button></div>
+          <p class="sub" style="font-size:13px;margin:6px 0 0">Geen geluid? Klik één keer op het TV-scherm (browsers vragen dat).</p>
         </div>
         <div class="card"><div class="label">Spelers (${v.players.length})</div><div class="plist">${playerRows(v)}</div>
           <div class="row" style="margin-top:10px"><button class="cta ghost small" id="addbot">+ Bot</button><button class="cta ghost small" id="editp">Mijn profiel</button></div></div>
@@ -216,7 +261,8 @@
       return `<div class="card"><div class="label">Jij presenteert 🎙️</div>${v.q || v.text ? qHtml(v.text || v.q) : `<div class="sub">${esc(v.kind)}</div>`}</div>${gmControls(v)}`;
     },
     wait(v) {
-      return `<div class="big">${v.big || '⏳'}</div><div class="title">${esc(v.title || 'Even wachten')}</div><p class="sub center">${esc(v.sub || '')}</p>`;
+      if (v.howto) return `<div class="big">${v.big || '⏳'}</div><div class="title">${esc(v.title || '')}</div><div class="label center">Zo werkt het</div>${howtoHtml(v.howto)}`;
+      return `<div class="big">${v.big || '⏳'}</div><div class="title">${esc(v.title || 'Even wachten')}</div><p class="sub center">${esc(v.sub || '')}</p>${v.kind === 'highlights' ? '' : waitRoom()}`;
     },
     catpick(v) {
       return `<div class="title">${esc(v.title)}</div><p class="sub center">Kies de categorie voor de volgende vraag</p>
@@ -433,18 +479,43 @@
   }
   function gmControls(v) {
     if (!v.gm) return '';
-    return `<div class="card" style="display:grid;gap:8px"><div class="label">Spelleider</div>
-      <button class="cta ghost" data-gm="gm:pause">${v.paused ? '▶️ Hervatten' : '⏸️ Pauze'}</button>
-      ${v.gm.canSkip ? '<button class="cta ghost" data-gm="gm:skip">⏭️ Vraag overslaan</button>' : ''}
-      ${v.gm.canNext ? '<button class="cta ghost" data-gm="gm:next">⏩ Door naar volgende stap</button>' : ''}
-      <button class="cta ghost" data-sheet="players">👥 Spelers beheren</button>
-      <button class="cta ghost" data-gm="gm:stop" data-confirm="Spel stoppen en terug naar de lobby?">🛑 Stoppen</button></div>`;
+    const s = v.settings || {};
+    const tile = (attr, e, t, on = true, extra = '') => `<button class="gmtile ${on ? '' : 'off'}" ${attr} ${on ? '' : 'disabled'} ${extra}><span class="e">${e}</span>${t}</button>`;
+    const sw = (k, e, t, val) => `<button class="gmsw ${val ? 'on' : ''}" data-set="${k}"><span class="e">${e}</span>${t}<i></i></button>`;
+    return `<div class="gmgrid">
+        ${tile('data-gm="gm:pause"', v.paused ? '▶️' : '⏸️', v.paused ? 'Hervatten' : 'Pauze', true, 'style="grid-column:1/-1"')}
+        ${tile('data-gm="gm:next"', '⏩', 'Volgende stap', v.gm.canNext && !v.paused)}
+        ${tile('data-gm="gm:addtime"', '⏱️', '+15 seconden', v.gm.canTime && !v.paused)}
+        ${tile('data-gm="gm:skip"', '⏭️', 'Vraag overslaan', v.gm.canSkip && !v.paused)}
+        ${tile('data-gm="gm:skipround" data-confirm="Deze hele ronde overslaan?"', '⏩⏩', 'Ronde overslaan', v.gm.canSkipRound && !v.paused)}
+      </div>
+      <div class="label" style="margin-top:14px">Geluid en beeld</div>
+      <div class="gmsws">
+        ${sw('music', '🎵', 'Muziek', s.music !== false)}
+        ${sw('sfx', '🔔', 'Effecten', s.sfx !== false)}
+        ${sw('voice', '🗣️', 'Voorlezen', !!s.voice)}
+        ${sw('bigText', '🔠', 'Grote tekst', !!s.bigText)}
+      </div>
+      <div class="gmgrid" style="margin-top:14px">
+        ${tile('data-sheet="players"', '👥', 'Spelers')}
+        ${tile('data-gm="gm:stop" data-confirm="Spel stoppen en terug naar de lobby?"', '🛑', 'Stoppen')}
+      </div>`;
+  }
+  function wireSettings(root) {
+    root.querySelectorAll('[data-set]').forEach((b) => (b.onclick = () => {
+      const k = b.dataset.set;
+      const cur = view && view.settings ? view.settings[k] : undefined;
+      const now = k === 'music' || k === 'sfx' ? cur === false : !cur;
+      b.classList.toggle('on', now);
+      act('gm:settings', { settings: { [k]: now } });
+    }));
   }
 
   // ---------- interactie ----------
   function wire(v) {
     const on = (sel, fn) => { const el = $(sel, screen); if (el) el.onclick = fn; };
     screen.querySelectorAll('[data-gm]').forEach((b) => (b.onclick = () => { if (b.dataset.confirm && !confirm(b.dataset.confirm)) return; act(b.dataset.gm); sheet = null; renderSheet(); }));
+    wireSettings(screen);
     screen.querySelectorAll('[data-sheet]').forEach((b) => (b.onclick = () => { sheet = b.dataset.sheet; renderSheet(); }));
     on('#pubtn', () => { sheet = 'pu'; ui.puType = null; renderSheet(); });
     on('#skipbtn', () => { if (confirm('Deze vraag anoniem overslaan? Niemand ziet wie het was.')) act('skip'); });
@@ -702,7 +773,7 @@
     if (!sheet || !view) { el.classList.add('hidden'); el.innerHTML = ''; return; }
     el.classList.remove('hidden');
     let html = '';
-    if (sheet === 'gm') html = `<h3>Spelleider 👑</h3>${gmControls(view)}`;
+    if (sheet === 'gm') html = `<h3>Bediening 👑</h3>${gmControls(view)}`;
     else if (sheet === 'players') html = `<h3>Spelers</h3><div class="plist">${playerRows({ players: view.gm ? view.gm.players : [] })}</div>`;
     else if (sheet === 'profile') html = profileForm(view.me).replace('Wie ben jij?', 'Profiel aanpassen') + '<button class="cta" id="psave">Opslaan</button>';
     else if (sheet === 'pu') {
@@ -722,7 +793,14 @@
     el.innerHTML = `<div class="in">${html}<button class="cta ghost" id="close">Sluiten</button></div>`;
     el.onclick = (e) => { if (e.target === el) { sheet = null; renderSheet(); } };
     $('#close', el).onclick = () => { sheet = null; renderSheet(); };
-    el.querySelectorAll('[data-gm]').forEach((b) => (b.onclick = () => { if (b.dataset.confirm && !confirm(b.dataset.confirm)) return; act(b.dataset.gm); sheet = null; renderSheet(); }));
+    el.querySelectorAll('[data-gm]').forEach((b) => (b.onclick = () => {
+      if (b.dataset.confirm && !confirm(b.dataset.confirm)) return;
+      act(b.dataset.gm);
+      // pauze en tijd erbij: paneel open laten, de rest sluit
+      if (b.dataset.gm !== 'gm:pause' && b.dataset.gm !== 'gm:addtime') sheet = null;
+      renderSheet();
+    }));
+    wireSettings(el);
     el.querySelectorAll('[data-sheet]').forEach((b) => (b.onclick = () => { sheet = b.dataset.sheet; renderSheet(); }));
     wireGmPlayers(el);
     el.querySelectorAll('[data-pu]').forEach((b) => (b.onclick = () => {

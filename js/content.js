@@ -93,6 +93,15 @@
   };
 
   // Teken & Raad: kleuren en lijndiktes (in een 1000x1000 vlak)
+  /* power-ups en avatars: ook nodig op de telefoon */
+  GN.POWERUPS = {
+    dubbel: { name: 'Dubbel', emoji: '✖️2', desc: 'Jouw punten voor deze vraag tellen dubbel.' },
+    vijftig: { name: '50/50', emoji: '✂️', desc: 'Twee foute antwoorden verdwijnen (alleen bij meerkeuze).' },
+    stelen: { name: 'Stelen', emoji: '🦝', desc: 'Je pikt de helft van wat iemand bij deze vraag verdient.', target: true },
+    sabotage: { name: 'Sabotage', emoji: '💣', desc: 'Iemand krijgt maar de helft van zijn punten bij deze vraag.', target: true },
+    schild: { name: 'Schild', emoji: '🛡️', desc: 'Blokkeert automatisch de eerste steel- of sabotage-actie tegen jou.', passive: true },
+  };
+  GN.AVATARS = ['🦊', '🐸', '🐙', '🦄', '🐻', '🐼', '🐯', '🦁', '🐷', '🐵', '🦉', '🐔', '🦖', '🐢', '🦀', '🐝', '👽', '🤖', '👻', '🎃', '🧙', '🧛', '🧟', '🥷', '🤠', '🦩', '🦦', '🐌', '🥨', '🍄'];
   GN.PALETTE = ['#1d1a2f', '#ff4f8b', '#4cc9f0', '#ffb627', '#3ddc97', '#9b7bff', '#8b5a2b', '#ffffff'];
   GN.WIDTHS = [7, 16, 34];
   GN.drawingSvg = function (d, cls) {
@@ -114,3 +123,24 @@
 
   if (typeof module !== 'undefined') module.exports = GN;
 })(typeof window !== 'undefined' ? window : globalThis);
+
+/* ---------- Zo werkt het: uitleg per ronde (TV en telefoon) ---------- */
+GN.HOWTO = {
+  mc: [['📱', 'Kies A, B, C of D op je telefoon'], ['🐢', 'Rustig nadenken: snelheid telt niet'], ['✅', 'Goed = 100 punten']],
+  tf: [['🕵️', 'Je ziet een stelling'], ['👍', 'Tik op Waar of Nep'], ['✅', 'Goed = punten, vaak met een raar weetje erbij']],
+  num: [['🔢', 'Schat het getal op je telefoon'], ['🎲', 'Wed daarna op de schatting die volgens jou het dichtst zit'], ['🏆', 'Dichtstbij én goed gewed = dubbel feest']],
+  hl: [['↕️', 'Is het volgende getal hoger of lager?'], ['🔥', 'Elke goede gok achter elkaar levert meer op'], ['💥', 'Eén keer fout en je reeks is weg']],
+  lingo: [['🟩', 'Raad het woord van vijf letters'], ['🟨', 'Groen = goede plek, geel = zit erin maar op een andere plek'], ['⚡', 'Hoe minder pogingen, hoe meer punten']],
+  bluff: [['✍️', 'Verzin een nep-antwoord dat echt klinkt'], ['🔍', 'Zoek daarna het échte antwoord tussen alle bluffen'], ['😈', 'Trapt iemand in jouw bluf? Punten voor jou!']],
+  echt: [['📰', 'Je hoort het begin van een waargebeurd verhaal'], ['✍️', 'Verzin hoe het afliep'], ['🔍', 'Zoek het echte einde, en luis anderen erin']],
+  order: [['🔢', 'Tik de dingen aan in de goede volgorde'], ['↩️', 'Foutje? Tik op opnieuw'], ['✅', 'Elk ding op de goede plek = punten, alles goed = bonus']],
+  puzzel: [['🧩', 'Twaalf woorden, drie groepjes van vier'], ['👆', 'Tik vier woorden aan die bij elkaar horen'], ['❌', 'Maar drie keer fout mag']],
+  invul: [['📝', 'Vul de gevraagde woorden in'], ['🙈', 'Je weet niet waar het verhaal over gaat'], ['😂', 'De TV leest het voor, stem op het grappigste woord']],
+  teken: [['🎨', 'Teken je geheime opdracht op je telefoon'], ['✍️', 'Verzin een nep-titel bij de tekening van een ander'], ['🔍', 'Zoek de echte titel. Goed tekenen loont!']],
+  persoonlijk: [['🫣', 'Vragen over jullie zelf'], ['🔥', 'Soms zit iemand in de hete stoel, soms stem je op elkaar'], ['🤐', 'Te pikant? Overslaan kan anoniem']],
+  top5: [['🔥', 'Iemand zit in de hete stoel'], ['🏅', 'Die zet vijf dingen eerlijk op volgorde'], ['🔮', 'De rest raadt die volgorde']],
+  leugen: [['✍️', 'Schrijf drie dingen over jezelf'], ['🤥', 'Twee zijn waar, één is gelogen'], ['🔍', 'Zoek bij de anderen de leugen']],
+  ketting: [['📜', 'Schrijf de volgende zin van een verhaal'], ['🙈', 'Je ziet alleen de zin ervoor'], ['😂', 'Aan het eind lezen we alles voor en stemmen we']],
+  wiezei: [['✍️', 'Iedereen beantwoordt dezelfde vraag, anoniem'], ['🗯️', 'Per antwoord raad je wie het schreef'], ['😈', 'Niemand die jou raadt? Punten voor jou']],
+  final: [['💰', 'Eén laatste vraag'], ['🎲', 'Zet zoveel van je punten in als je durft'], ['🏆', 'Goed = je inzet erbij, fout = je inzet kwijt']],
+};

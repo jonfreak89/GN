@@ -54,16 +54,10 @@
     { name: 'Team Kaas', emoji: '🧀', color: '#4cc9f0' },
   ];
 
-  const POWERUPS = {
-    dubbel: { name: 'Dubbel', emoji: '✖️2', desc: 'Jouw punten voor deze vraag tellen dubbel.' },
-    vijftig: { name: '50/50', emoji: '✂️', desc: 'Twee foute antwoorden verdwijnen (alleen bij meerkeuze).' },
-    stelen: { name: 'Stelen', emoji: '🦝', desc: 'Je pikt de helft van wat iemand bij deze vraag verdient.', target: true },
-    sabotage: { name: 'Sabotage', emoji: '💣', desc: 'Iemand krijgt maar de helft van zijn punten bij deze vraag.', target: true },
-    schild: { name: 'Schild', emoji: '🛡️', desc: 'Blokkeert automatisch de eerste steel- of sabotage-actie tegen jou.', passive: true },
-  };
+  const POWERUPS = GN.POWERUPS;
   const PU_KEYS = Object.keys(POWERUPS);
 
-  const AVATARS = ['🦊', '🐸', '🐙', '🦄', '🐻', '🐼', '🐯', '🦁', '🐷', '🐵', '🦉', '🐔', '🦖', '🐢', '🦀', '🐝', '👽', '🤖', '👻', '🎃', '🧙', '🧛', '🧟', '🥷', '🤠', '🦩', '🦦', '🐌', '🥨', '🍄'];
+  const AVATARS = GN.AVATARS;
   const COLORS = ['#ff5d73', '#ffb627', '#3ddc97', '#4cc9f0', '#b388ff', '#ff8fab', '#f9f871', '#62d2a2', '#ff9a3c', '#7aa2ff', '#e36bae', '#9be564'];
   const BOT_NAMES = ['Bot Bertje', 'Bot Truus', 'Bot Henk', 'Bot Ingrid', 'Bot Kees', 'Bot Greet'];
   const BOT_LIES = [
@@ -95,7 +89,7 @@
         players: {},
         order: [],
         gm: null,
-        settings: { spice: 2, length: 'normaal', gmPlays: true, voice: false, teams: 0, rounds: {}, theme: '', mode: 'quiz' },
+        settings: { spice: 2, length: 'normaal', gmPlays: true, voice: false, teams: 0, rounds: {}, theme: '', mode: 'quiz', music: true, sfx: true, bigText: false },
         step: { kind: 'lobby', id: 0 },
         paused: null,
         plan: [],
@@ -189,7 +183,7 @@
       teams.forEach((t) => (t.score = t.size ? Math.round((t.sum * max) / t.size) : 0));
       return teams;
     }
-    blankStats() { return { correct: 0, fooled: 0, betWins: 0, closest: 0, kenCorrect: 0, wieVotes: 0, powerups: 0, stolen: 0, wzRight: 0 }; }
+    blankStats() { return { correct: 0, fooled: 0, betWins: 0, closest: 0, kenCorrect: 0, wieVotes: 0, powerups: 0, stolen: 0, wzRight: 0, scored: 0, best: 0 }; }
     assignGm() {
       const h = this.players.find((p) => !p.isBot && p.connected) || this.players.find((p) => !p.isBot);
       this.s.gm = h ? h.id : null;
@@ -315,6 +309,8 @@
         p.skip = 0;
       });
       s.plan = this.buildPlan().map(([type, count]) => ({ type, count }));
+      s.highlights = [];
+      s.howtoSeen = {};
       if (this.teamCount()) this.players.forEach((p) => { if (p.playing && (p.team == null || p.team >= this.teamCount())) p.team = this.smallestTeam(p.id); });
       s.roundIdx = -1;
       this.nextRound();
@@ -377,7 +373,10 @@
       this.contestants().forEach((p) => (startScores[p.id] = p.score));
       s.round = { type: r.type, count: r.count, done: 0, cat: null, usedCats: [], startScores };
       const R = ROUNDS[r.type];
-      this.newStep('intro', { round: r.type, title: R.title, emoji: R.emoji, desc: R.desc, roundNo: s.roundIdx + 1, rounds: s.plan.length, count: r.count }, SHOW.intro);
+      s.howtoSeen = s.howtoSeen || {};
+      const howto = !s.howtoSeen[r.type] && !!(GN.HOWTO && GN.HOWTO[r.type]);
+      s.howtoSeen[r.type] = true;
+      this.newStep('intro', { round: r.type, title: R.title, emoji: R.emoji, desc: R.desc, howto, roundNo: s.roundIdx + 1, rounds: s.plan.length, count: r.count }, howto ? SHOW.intro + 8 : SHOW.intro);
     }
     nextQuestion() {
       const s = this.s;
@@ -1387,8 +1386,9 @@
       const st = s.step;
       switch (act.a) {
         case 'gm:settings': {
-          if (st.kind !== 'lobby' && st.kind !== 'end') return;
           const n = act.settings || {};
+          ['music', 'sfx', 'voice', 'bigText'].forEach((k) => { if (typeof n[k] === 'boolean') s.settings[k] = n[k]; });
+          if (st.kind !== 'lobby' && st.kind !== 'end') return this.changed();
           if ([1, 2, 3].includes(n.spice)) s.settings.spice = n.spice;
           if (SLOTS[n.length]) s.settings.length = n.length;
           if (typeof n.voice === 'boolean') s.settings.voice = n.voice;
@@ -1431,6 +1431,16 @@
         case 'gm:next':
           if (!s.paused && st.kind !== 'lobby' && st.kind !== 'end') this.timeout();
           return;
+        case 'gm:addtime':
+          if (st.deadline && this.canAddTime()) { st.deadline += 15000; st.duration = (st.duration || 0) + 15; this.changed(); }
+          return;
+        case 'gm:skipround':
+          if (this.canSkipRound()) {
+            this.botQueue = [];
+            s.round.done = s.round.count;
+            this.roundScores();
+          }
+          return;
         case 'gm:clearseen':
           Object.keys(this.seen).forEach((k) => delete this.seen[k]);
           this.onSeen(null);
@@ -1443,6 +1453,15 @@
           this.players.forEach((p) => { p.score = 0; p.powerups = []; });
           return this.changed();
       }
+    }
+
+    canAddTime() {
+      const k = this.s.step.kind;
+      return !!this.s.step.deadline && !['intro', 'reveal', 'scores', 'board', 'highlights', 'lobby', 'end'].includes(k);
+    }
+    canSkipRound() {
+      const k = this.s.step.kind;
+      return !!this.s.round && !['lobby', 'end', 'scores', 'highlights', 'roll', 'board', 'final', 'wager'].includes(k) && this.s.round.type !== 'final';
     }
 
     // ---------- timers ----------
@@ -1495,6 +1514,7 @@
       const st = this.s.step;
       switch (st.kind) {
         case 'intro': return this.nextQuestion();
+        case 'highlights': return this.newStep('end', st.endData, 0);
         case 'catpick': return this.resolveCatPick(null);
         case 'mc': return this.revealMc('mc');
         case 'tf': return this.revealMc('tf');
@@ -1574,7 +1594,43 @@
       return events;
     }
     reveal(data, secs) {
+      Object.entries(data.gains || {}).forEach(([pid, g]) => {
+        const p = this.s.players[pid];
+        if (!p || !p.stats || !(g > 0)) return;
+        p.stats.scored = (p.stats.scored || 0) + 1;
+        p.stats.best = Math.max(p.stats.best || 0, g);
+      });
+      try { this.noteHighlight(data); } catch (e) {}
       this.newStep('reveal', data, secs || SHOW.reveal);
+    }
+    noteHighlight(r) {
+      const H = (this.s.highlights = this.s.highlights || []);
+      const add = (h) => { if (h.n > 0 && H.length < 200) H.push(h); };
+      const count = (votes) => { const n = {}; Object.values(votes || {}).forEach((i) => (n[i] = (n[i] || 0) + 1)); return n; };
+      if (r.of === 'bluff' || r.of === 'tk') {
+        const n = count(r.votes);
+        r.options.forEach((o, i) => { if (i !== r.truth && o.authors && o.authors.length) add({ k: r.of === 'tk' ? 'tkfake' : r.story ? 'echt' : 'bluff', text: o.text, q: r.of === 'tk' ? r.prompt : r.q.q, by: o.authors, n: n[i] || 0 }); });
+        if (r.of === 'tk' && r.drawing) add({ k: 'tk', drawing: r.drawing, text: r.prompt, by: [r.artist], n: (n[r.truth] || 0) + 1 });
+      } else if (r.of === 'lg') {
+        const fooled = Object.values(r.votes || {}).filter((i) => i !== r.lie).length;
+        add({ k: 'lg', text: r.statements[r.lie], by: [r.author], n: fooled });
+      } else if (r.of === 'kt' || r.of === 'iv') {
+        const list = r.of === 'kt' ? r.lines : r.fills;
+        (r.top || []).forEach((i) => { const x = list[i]; if (x && x.author) add({ k: r.of, text: x.text, q: r.of === 'iv' ? r.title : r.opener, by: [x.author], n: (r.counts || {})[i] || 0 }); });
+      } else if (r.of === 'wz') {
+        const wrong = Object.values(r.votes || {}).filter((x) => x !== r.author).length;
+        add({ k: 'wz', text: r.entry, q: r.text, by: [r.author], n: wrong + 1 });
+      } else if (r.of === 'wie') {
+        (r.top || []).forEach((id) => add({ k: 'wie', text: r.text, by: [id], n: (r.count || {})[id] || 0 }));
+      } else if ((r.of === 'mc' || r.of === 'tf') && r.right && r.right.length === 0 && this.contestants().length > 1) {
+        add({ k: 'hard', text: r.q.q, answer: r.options[r.correct], by: [], n: 1 });
+      }
+    }
+    buildHighlights() {
+      const H = this.s.highlights || [];
+      const best = (k) => H.filter((h) => h.k === k && (!h.by.length || h.by.some((id) => this.s.players[id]))).sort((a, b) => b.n - a.n)[0];
+      const order = ['bluff', 'tk', 'kt', 'iv', 'lg', 'echt', 'tkfake', 'wz', 'wie', 'hard'];
+      return order.map(best).filter(Boolean).slice(0, 6);
     }
 
     revealMc(of = 'mc') {
@@ -1796,8 +1852,12 @@
       best('stolen', 'Zakkenroller', '🦝', (n) => `${n} punten gestolen`);
       best('powerups', 'Chaosmaker', '💥', (n) => `${n} power-ups gebruikt`);
       best('wzRight', 'Detective', '🔎', (n) => `${n}× geraden wie wat zei`);
+      best('scored', 'Puntenmachine', '🎯', (n) => `${n}× gescoord`);
       const teams = this.teamScores();
-      this.newStep('end', { ranking: ps.map((p) => p.id), awards, teamRanking: teams ? teams.slice().sort((a, b) => b.score - a.score).map((t) => t.id) : null }, 0);
+      const endData = { ranking: ps.map((p) => p.id), awards, teamRanking: teams ? teams.slice().sort((a, b) => b.score - a.score).map((t) => t.id) : null };
+      const slides = this.buildHighlights();
+      if (slides.length) return this.newStep('highlights', { slides, endData }, slides.length * 7 + 2);
+      this.newStep('end', endData, 0);
     }
 
     // ---------- views ----------
@@ -1829,6 +1889,7 @@
       };
       const copy = (keys) => keys.forEach((k) => { if (st[k] !== undefined) v[k] = st[k]; });
       copy(['title', 'emoji', 'desc', 'roundNo', 'rounds', 'count', 'qno', 'qcount', 'skippedNote', 'story']);
+      if (st.kind === 'intro') { v.howto = !!st.howto; v.roundType = st.round; }
       if (st.kind === 'intro') v.introRound = st.round;
       if (st.cat) v.cat = this.catInfo(st.cat);
       if (st.q) v.q = { q: st.q.q, unit: st.q.unit, fact: st.q.fact, lo: st.q.lo, hi: st.q.hi, fmt: st.q.fmt, img: st.q.img, emoji: st.q.emoji, answer: undefined };
@@ -1879,6 +1940,7 @@
         }
         case 'scores': v.bonus = st.bonus; v.nextRound = st.nextRound; break;
         case 'end': v.ranking = st.ranking; v.awards = st.awards; v.teamRanking = st.teamRanking; break;
+        case 'highlights': v.slides = st.slides; break;
       }
       return v;
     }
@@ -1894,10 +1956,12 @@
       const bord = s.settings.mode === 'bord';
       const sorted = this.contestants().slice().sort((a, b) => (bord ? (b.pos || 0) - (a.pos || 0) : 0) || b.score - a.score);
       me.rank = sorted.findIndex((x) => x.id === id) + 1;
+      if (p.stats) me.stats = { scored: p.stats.scored || 0, best: p.stats.best || 0, correct: p.stats.correct || 0, fooled: p.stats.fooled || 0, powerups: p.stats.powerups || 0 };
+      me.of = sorted.length;
       const v = { theme: s.settings.theme, me, kind: st.kind, stepId: st.id, paused: !!s.paused, deadline: st.deadline, duration: st.duration, remaining: this.remaining(), answered, settings: s.settings };
       const teams = this.teamScores();
       if (teams) { v.teams = teams.map((t) => ({ id: t.id, name: t.name, emoji: t.emoji, color: t.color, score: t.score, size: t.size })); }
-      v.gm = isGm ? { canSkip: ['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'hl', 'lingo', 'puzzel', 'top5'].includes(st.kind), canNext: !['lobby', 'end'].includes(st.kind), players: this.players.map((x) => this.pub(x)) } : null;
+      v.gm = isGm ? { canTime: this.canAddTime(), canSkipRound: this.canSkipRound(), canSkip: ['mc', 'tf', 'num', 'bluffWrite', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'hl', 'lingo', 'puzzel', 'top5'].includes(st.kind), canNext: !['lobby', 'end'].includes(st.kind), players: this.players.map((x) => this.pub(x)) } : null;
       if (st.cat) v.cat = this.catInfo(st.cat);
       const qtext = st.q ? st.q.q : null;
       v.key = st.kind + ':' + st.id + ':' + (answered ? 'a' : 'n') + (p.playing ? '' : ':gm');
@@ -1921,6 +1985,11 @@
         case 'intro':
           v.screen = 'wait';
           v.big = st.emoji; v.title = st.title; v.sub = st.desc;
+          if (st.howto) v.howto = st.round;
+          break;
+        case 'highlights':
+          v.screen = 'wait';
+          v.big = '🎬'; v.title = 'Terugblik!'; v.sub = 'Kijk naar de TV: de hoogtepunten van de avond.';
           break;
         case 'catpick':
           v.screen = st.picker === id ? 'catpick' : 'wait';
@@ -2216,8 +2285,6 @@
   GN.THEMES = THEMES;
   GN.BOARD = BOARD;
   GN.BOARD_END = BOARD_END;
-  GN.POWERUPS = POWERUPS;
-  GN.AVATARS = AVATARS;
   GN.LENGTHS = LENGTHS;
   GN.fmtNum = fmtNum;
   GN.norm = norm;

@@ -10,6 +10,16 @@ Quizavond in je eigen woonkamer. De TV toont het spel, iedereen speelt mee op zi
 
 Telefoon op slot of pagina herladen? Je komt vanzelf terug op je plek, met je punten. Crasht de TV, herlaad dan gewoon: het spel staat gepauzeerd klaar en de telefoons verbinden opnieuw.
 
+## De show
+
+- **Joep de Maan** presenteert: hij verwelkomt spelers, kondigt rondes aan, plaagt wie te lang nadenkt en reageert op de uitslag.
+- **Muziek en geluid** worden in de browser zelf gemaakt (niets te downloaden): loungemuziek in de lobby, spanning tijdens vragen, tromgeroffel bij de onthulling, applaus aan het eind. Browsers willen eerst één klik of toets op de TV voordat er geluid mag.
+- **Spannende onthullingen:** tromgeroffel, eerst valt het foute weg, dan licht het goede antwoord op, met confetti. In de tussenstand zie je spelers elkaar inhalen.
+- **Uitleg per ronde:** de eerste keer dat een ronde langskomt, staat op TV en telefoon in drie stappen hoe het werkt.
+- **Terugblik:** aan het eind de beste bluf, het mooiste kunstwerk, de beste verhaalzin en meer, daarna de winnaar.
+- **Wachten op je telefoon:** een weetje, noppenfolie om te knappen of je eigen statistieken.
+- **Bediening voor de spelleider** (👑 Bediening): pauze, volgende stap, +15 seconden, vraag of ronde overslaan, muziek, effecten, voorlezen en grote tekst aan of uit.
+
 ## Online zetten (GitHub Pages)
 
 Settings → Pages → *Deploy from a branch* → `main` / `/ (root)` → Save.
