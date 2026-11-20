@@ -35,6 +35,7 @@
     seen,
     onChange: () => schedule(),
     onSeen: () => { seenDirty = true; },
+    onReact: (id, e) => { try { floatReact(id, e); } catch (x) {} },
   });
   if (!fresh && saved.code === code && saved.state) {
     try { engine.restore(saved.state); restored = true; } catch (e) { console.warn('herstellen mislukt', e); }
@@ -208,12 +209,13 @@
   soundHint.onclick = () => Sound.unlock();
   document.body.appendChild(soundHint);
   Sound.onUnlock(() => { soundHint.remove(); applyMood(lastView, true); });
-  const ANSWERING = new Set(['catpick', 'mc', 'tf', 'num', 'bet', 'bluffWrite', 'bluffVote', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'wzGuess', 'hl', 'lingo', 'puzzel', 'tkDraw', 'tkFake', 'tkVote', 'lgWrite', 'lgGuess', 'top5', 'roll', 'ivWrite', 'ivVote', 'ktWrite', 'ktVote', 'wager', 'final']);
+  const ANSWERING = new Set(['catpick', 'mc', 'tf', 'num', 'bet', 'bluffWrite', 'bluffVote', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'wzGuess', 'hl', 'lingo', 'puzzel', 'kdWrite', 'gfClue', 'gfGuess', 'ewClue', 'ewGuess', 'tt', 'ttShow', 'tkDraw', 'tkFake', 'tkVote', 'lgWrite', 'lgGuess', 'top5', 'roll', 'ivWrite', 'ivVote', 'ktWrite', 'ktVote', 'wager', 'final']);
   function moodFor(v) {
     if (!v) return 'off';
     if (v.paused) return 'calm';
     if (v.kind === 'lobby') return 'lobby';
-    if (v.kind === 'end' || v.kind === 'highlights') return 'party';
+    if (v.kind === 'end' || v.kind === 'highlights' || v.kind === 'cast') return 'party';
+    if (v.kind === 'rad' || v.kind === 'radSpin') return 'reveal';
     if (v.kind === 'intro' || v.kind === 'scores' || v.kind === 'board') return 'reveal';
     if (v.kind === 'reveal') return 'reveal';
     return 'think';
@@ -246,6 +248,8 @@
     if (k !== 'lobby') Show.hush();
     answeredCount = 0;
     nudged = 0;
+    if (TVX && TVX.onStep && TVX.onStep(v, { sfx, later, m, ps })) return;
+    if (k === 'end') recordFame(v);
     if (k === 'lobby') {
       if (!v.players.length) host('empty', {}, 'happy');
       lobbyCount = v.players.length;
@@ -262,7 +266,7 @@
       const r = v.reveal;
       const gains = r.gains || {};
       const pos = ps.filter((p) => gains[p.id] > 0);
-      const judged = !['poll', 'wie', 'ken', 'iv', 'kt', 'top5'].includes(r.of) || r.of === 'ken';
+      const judged = r.judged !== false;
       sfx('drumroll', 0, 1.15);
       sfx('crash', 1.2);
       if (judged) {
@@ -390,8 +394,9 @@
     const id = t ? t.id : '';
     if (id === themeNow) return;
     themeNow = id;
-    document.body.classList.remove('theme-nerd', 'theme-retro');
+    document.body.classList.remove('theme-nerd', 'theme-retro', 'theme-sint', 'theme-kerst');
     if (id) document.body.classList.add('theme-' + id);
+    Show.setFall(id === 'kerst' ? 'snow' : id === 'sint' ? 'noten' : null);
   }
 
   // ---------- ganzenbord ----------
@@ -478,7 +483,7 @@
 
   function renderTop() {
     const v = lastView;
-    const r = v && v.round && !['lobby', 'end', 'highlights'].includes(v.kind) ? v.round : null;
+    const r = v && v.round && !['lobby', 'end', 'highlights', 'cast'].includes(v.kind) ? v.round : null;
     const stat = { online: '', connecting: 'verbinden…', reconnecting: 'opnieuw verbinden…', 'waiting-id': 'code vrijmaken…', taken: 'code bezet: herlaad', nolib: 'geen internet?' }[netStatus] || '';
     $('#roundinfo').innerHTML = r
       ? `<span class="chip">${r.emoji} ${esc(r.title)}</span><span>Ronde ${r.roundNo}/${r.rounds}</span>${v.qno ? `<span>· Vraag ${v.qno}/${v.qcount}</span>` : ''}`
@@ -535,7 +540,10 @@
     const off = Object.keys(v.settings.rounds || {}).filter((k) => v.settings.rounds[k] === false).map((k) => GN.ROUNDS[k].title);
     const th = v.theme ? `<span>${v.theme.emoji} ${esc(v.theme.name)}</span>` : '';
     const md = v.settings.mode === 'bord' ? '<span>🪿 Ganzenbord</span>' : '';
-    return `${th}${md}<span>${sp.emoji} ${sp.name}</span><span>⏱️ ${esc(v.settings.length)} (${GN.LENGTHS[v.settings.length]})</span>${v.settings.teams ? `<span>👥 ${v.settings.teams} teams</span>` : ''}${v.settings.voice ? '<span>🔊 Voorlezen</span>' : ''}${!v.settings.gmPlays ? '<span>🎙️ Spelleider presenteert</span>' : ''}${off.length ? `<span>🚫 Zonder: ${esc(off.join(', '))}</span>` : ''}`;
+    const pk = (GN.PACKS || []).find((x) => x.id === v.settings.pack);
+    const pkc = pk ? `<span class="packchip">${pk.emoji} ${esc(pk.name)}</span>` : v.settings.pack === 'eigen' ? '<span class="packchip">🛠️ Eigen mix</span>' : '';
+    const dr = v.settings.drink ? '<span>🍺 Drankspel</span>' : '';
+    return `${pkc}${pk && (pk.theme || pk.mode) ? '' : th + md}${dr}<span>${sp.emoji} ${sp.name}</span><span>⏱️ ${esc(v.settings.length)} (${GN.LENGTHS[v.settings.length]})</span>${v.settings.teams ? `<span>👥 ${v.settings.teams} teams</span>` : ''}${v.settings.voice ? '<span>🔊 Voorlezen</span>' : ''}${!v.settings.gmPlays ? '<span>🎙️ Spelleider presenteert</span>' : ''}${off.length ? `<span>🚫 Zonder: ${esc(off.join(', '))}</span>` : ''}`;
   };
   const lobbyHint = (v) => {
     const gm = v.players.find((p) => p.gm);
@@ -561,12 +569,13 @@
           <h1 class="logo"><span class="g">Game</span> <span class="n">Night</span> <span class="moon">🌙</span></h1>
           <div class="tag">${v.theme ? `${v.theme.emoji} ${esc(v.theme.name)}` : 'De quizavond in je eigen woonkamer'}</div>
           <div class="steps">
-            <div><i>1</i> Scan de QR-code of ga naar de link</div>
-            <div><i>2</i> Kies je naam en avatar</div>
-            <div><i>3</i> De spelleider 👑 kiest de instellingen en start</div>
+            <div><i>1</i> Scan de QR-code met je telefoon</div>
+            <div><i>2</i> Kies je naam, poppetje en kleur</div>
+            <div><i>3</i> De spelleider 👑 kiest een avond en start</div>
           </div>
           <div class="settings" id="lobbysettings">${settingsChips(v)}</div>
           <div class="hint" id="lobbyhint">${lobbyHint(v)}</div>
+          ${fameHtml()}
         </div>
         <div class="joinbox pop">
           <div class="qr"><div class="spinner"></div></div>
@@ -596,7 +605,8 @@
     },
 
     mc: (v) => `<div class="panel">${head(v)}
-      <div class="${qClass(v.q.q)} pop">${fmtQ(v.q.q)}</div>
+      ${v.q.emoji ? `<div class="emojiq pop">${v.q.emoji}</div>` : ''}
+      <div class="${qClass(v.q.q)} ${v.q.emoji ? 'small' : 'pop'}">${fmtQ(v.q.q)}</div>
       <div class="opts">${v.options.map((o, i) => `<div class="opt rise" style="animation-delay:${0.3 + i * 0.1}s"><span class="l">${LETTERS[i]}</span>${esc(o)}</div>`).join('')}</div>
       ${waitLine(v)}</div>`,
 
@@ -809,7 +819,7 @@
       <div class="qsub" style="margin-top:.6em">Stem op je telefoon op de beste zin</div>
       ${waitLine(v)}</div>`,
 
-    reveal: (v) => REVEALS[v.reveal.of](v, v.reveal),
+    reveal: (v) => (REVEALS[v.reveal.of] ? REVEALS[v.reveal.of](v, v.reveal) + sipBanner(v) : ''),
 
     scores: (v) => {
       const ps = v.players.filter((p) => p.playing).slice().sort((a, b) => b.score - a.score);
@@ -988,7 +998,8 @@
       const m = pmap(v);
       const by = (i) => Object.keys(m).filter((id) => r.picks && r.picks[id] === i);
       return `<div class="panel">${head(v)}
-        <div class="${qClass(r.q.q)}" style="font-size:2.3em">${fmtQ(r.q.q)}</div>
+        ${r.q.emoji ? `<div class="emojiq">${r.q.emoji}</div>` : ''}
+        <div class="${qClass(r.q.q)} ${r.q.emoji ? 'small' : ''}" style="${r.q.emoji ? '' : 'font-size:2.3em'}">${fmtQ(r.q.q)}</div>
         <div class="opts">${r.options.map((o, i) => `<div class="opt ${i === r.correct ? 'right' : 'wrong'}"><span class="l">${LETTERS[i]}</span>${esc(o)}${voters(by(i), m)}</div>`).join('')}</div>
         ${eventsBox(r)}${factBox(r.q)}</div>`;
     },
@@ -1061,6 +1072,58 @@
     },
   };
 
+  // drankspel: wie niks scoorde, neemt een slok
+  function sipBanner(v) {
+    const r = v.reveal;
+    if (!v.settings.drink || r.judged === false) return '';
+    const ps = v.players.filter((p) => p.playing);
+    const dry = ps.filter((p) => !((r.gains || {})[p.id] > 0));
+    if (!dry.length) return '<div class="sips">🥂 Niemand hoeft te drinken. Proost toch maar!</div>';
+    if (dry.length === ps.length) return '<div class="sips">🍻 Iedereen een slok!</div>';
+    return `<div class="sips">🍺 Slokje voor ${dry.map((p) => `<b>${esc(p.name)}</b>`).join(', ')}</div>`;
+  }
+  // reacties van telefoons vliegen over het scherm
+  let reactBox = null;
+  function floatReact(id, e) {
+    if (!reactBox) { reactBox = document.createElement('div'); reactBox.id = 'reacts'; document.body.appendChild(reactBox); }
+    if (reactBox.children.length > 36) return;
+    const p = engine.s.players[id];
+    const el = document.createElement('div');
+    el.className = 'react';
+    el.style.left = 6 + Math.random() * 86 + '%';
+    el.style.setProperty('--dx', (Math.random() - 0.5) * 12 + 'vw');
+    el.style.setProperty('--c', p ? p.color : '#fff');
+    el.innerHTML = `<span>${e}</span>${p ? `<small>${esc(p.name)}</small>` : ''}`;
+    reactBox.appendChild(el);
+    setTimeout(() => el.remove(), 3400);
+    Sound.sfx('pop', 0, Math.floor(Math.random() * 8));
+  }
+  // eregalerij: winnaars van eerdere avonden op deze TV
+  function recordFame(v) {
+    const m = pmap(v);
+    const tw = v.teamRanking && v.teams ? v.teams.find((t) => t.id === v.teamRanking[0]) : null;
+    const w = v.ranking && m[v.ranking[0]];
+    if (!w && !tw) return;
+    const fame = store.get('gn.fame', []);
+    if (fame.length && fame[0].step === v.stepId && fame[0].code === code) return;
+    fame.unshift({ at: Date.now(), step: v.stepId, code, name: tw ? tw.name : w.name, avatar: tw ? tw.emoji : w.avatar, score: tw ? tw.score : w.score, n: v.players.filter((p) => p.playing).length, bots: !tw && !!w.isBot });
+    store.set('gn.fame', fame.slice(0, 40));
+  }
+  function fameHtml() {
+    const fame = store.get('gn.fame', []).filter((f) => !f.bots);
+    if (!fame.length) return '';
+    const wins = {};
+    fame.forEach((f) => (wins[f.name] = (wins[f.name] || 0) + 1));
+    const top = Object.entries(wins).sort((a, b) => b[1] - a[1])[0];
+    const best = fame.slice().sort((a, b) => b.score - a.score)[0];
+    return `<div class="fame"><div class="famehead">🏆 Eregalerij</div>
+      <div class="famerow"><span>Laatste winnaar</span><b>${fame[0].avatar} ${esc(fame[0].name)}</b></div>
+      ${top[1] > 1 ? `<div class="famerow"><span>Meeste zeges</span><b>${esc(top[0])} (${top[1]}×)</b></div>` : ''}
+      <div class="famerow"><span>Hoogste score</span><b>${esc(best.name)} · ${best.score}</b></div></div>`;
+  }
+  const TVX = GN.TVX ? GN.TVX({ esc, head, waitLine, pmap, voters, qClass, fmtQ, LETTERS, eventsBox, factBox, stage, Sound, Show, host: (...a) => host(...a), say: (...a) => say(...a) }) : null;
+  if (TVX) { Object.assign(VIEWS, TVX.views); Object.assign(REVEALS, TVX.reveals); }
+
   let climbInfo = null;
   function animateScores(v) {
     climbInfo = null;
@@ -1122,7 +1185,7 @@
     if (v && v.deadline && v.duration) {
       const ref = engine.s.paused ? engine.s.paused.at : Date.now();
       const left = Math.max(0, v.deadline - ref);
-      const showTimer = !['intro', 'reveal', 'scores', 'highlights', 'board'].includes(v.kind);
+      const showTimer = !['intro', 'reveal', 'scores', 'highlights', 'board', 'cast', 'radSpin'].includes(v.kind);
       timerEl.classList.toggle('hidden', !showTimer);
       if (showTimer) {
         const frac = left / (v.duration * 1000);

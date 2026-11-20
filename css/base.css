@@ -103,3 +103,40 @@ body.theme-retro {
     radial-gradient(70% 60% at 50% 0%, rgba(185, 103, 255, 0.4), transparent 70%);
 }
 body.theme-retro .qtext, body.theme-retro h2 { text-shadow: 0.06em 0.06em 0 rgba(255, 42, 109, 0.55); }
+
+body.theme-sint {
+  --ink: #2a0a12;
+  --ink-2: #3d1019;
+  --ink-3: #5a1826;
+  --line: rgba(255, 200, 80, 0.22);
+  --text: #fff6e6;
+  --muted: #e6c9a8;
+  --pink: #ff5a5f;
+  --amber: #ffc93c;
+  --mint: #7ee081;
+  --sky: #ffd98a;
+  --violet: #ff9966;
+  background-image:
+    radial-gradient(60% 50% at 50% -10%, rgba(255, 201, 60, 0.3), transparent 70%),
+    radial-gradient(40% 40% at 0% 100%, rgba(255, 90, 95, 0.22), transparent 70%);
+}
+body.theme-kerst {
+  --ink: #0a1f1a;
+  --ink-2: #10302a;
+  --ink-3: #1a4a40;
+  --line: rgba(255, 255, 255, 0.16);
+  --text: #f4fff9;
+  --muted: #b8dccf;
+  --pink: #ff4d5e;
+  --amber: #ffd166;
+  --mint: #6ee7a8;
+  --sky: #a8e6ff;
+  --violet: #e85d75;
+  background-image:
+    radial-gradient(60% 50% at 50% -10%, rgba(255, 77, 94, 0.28), transparent 70%),
+    radial-gradient(45% 45% at 100% 100%, rgba(110, 231, 168, 0.2), transparent 70%);
+}
+#fall { position: fixed; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
+#fall i { position: absolute; top: -8%; font-style: normal; color: #fff; animation: fallDown linear infinite; will-change: transform; }
+#fall.noten i { color: #b5651d; text-shadow: 0 1px 0 #7a3f0e; }
+@keyframes fallDown { to { transform: translate3d(4vw, 115vh, 0) rotate(240deg); } }

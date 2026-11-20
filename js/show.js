@@ -163,5 +163,26 @@
     else { raf = null; g.clearRect(0, 0, cv.width, cv.height); }
   }
 
-  GN.Show = { mount, say, hush, setFace, mountBg, setBg, confetti, reduce };
+  // ---------- vallende sneeuw (Kerst) of pepernoten (Sinterklaas) ----------
+  let fall = null;
+  let fallKind = null;
+  function setFall(kind) {
+    if (kind === fallKind) return;
+    fallKind = kind;
+    if (fall) { fall.remove(); fall = null; }
+    if (!kind || reduce) return;
+    fall = document.createElement('div');
+    fall.id = 'fall';
+    fall.className = kind;
+    const glyph = kind === 'snow' ? ['❄', '❅', '•', '❆'] : ['●', '●', '🎁', '●'];
+    let html = '';
+    for (let i = 0; i < 26; i++) {
+      const size = 0.7 + Math.random() * 1.5;
+      html += `<i style="left:${Math.random() * 100}%;font-size:${size.toFixed(2)}em;animation-duration:${(9 + Math.random() * 12).toFixed(1)}s;animation-delay:-${(Math.random() * 20).toFixed(1)}s;opacity:${(0.35 + Math.random() * 0.5).toFixed(2)}">${glyph[i % glyph.length]}</i>`;
+    }
+    fall.innerHTML = html;
+    document.body.appendChild(fall);
+  }
+
+  GN.Show = { mount, say, hush, setFace, mountBg, setBg, confetti, setFall, reduce };
 })();

@@ -425,3 +425,92 @@ body.bigtext #app, body.bigtext #overlay { font-size: clamp(14px, 1.3vw, 46px); 
 #board.many .pchip { font-size: 0.85em; }
 body.bigtext .opt { min-height: 2.8em; padding: 0.65em 1em; }
 body.bigtext #board .pchip { font-size: 0.85em; }
+
+/* ================= UITBREIDING: nieuwe rondes en show ================= */
+.panel.wide { max-width: 92em; }
+.emojiq { text-align: center; font-size: 6.5em; line-height: 1.15; letter-spacing: 0.08em; margin: 0.05em 0 0.1em; }
+.qtext.small { font-size: 1.9em; color: var(--muted); margin-bottom: 0.6em; }
+.sips { text-align: center; margin: 0.8em auto 0; background: rgba(255, 182, 39, 0.16); border: 2px solid var(--amber); border-radius: 99px; padding: 0.35em 1.2em; font-size: 1.5em; width: fit-content; animation: rise 0.5s 2.3s both; }
+
+/* reacties */
+#reacts { position: fixed; inset: 0; z-index: 7; pointer-events: none; overflow: hidden; }
+.react { position: absolute; bottom: -4em; display: grid; justify-items: center; font-size: clamp(22px, 3.4vw, 90px); animation: reactUp 3.3s ease-out forwards; }
+.react small { font-size: 0.26em; font-weight: 700; background: var(--c); color: #1b1440; border-radius: 99px; padding: 0.1em 0.6em; margin-top: -0.3em; }
+@keyframes reactUp { 0% { transform: translate(0, 0) scale(0.4); opacity: 0; } 12% { opacity: 1; transform: translate(0, -12vh) scale(1.15); } 100% { transform: translate(var(--dx), -86vh) scale(1); opacity: 0; } }
+
+/* eregalerij in de lobby */
+.fame { margin-top: 1.2em; background: var(--ink-2); border: 2px solid var(--line); border-radius: var(--radius); padding: 0.8em 1.2em; max-width: 26em; font-size: 1.15em; }
+.famehead { font-family: var(--display); font-weight: 800; color: var(--amber); margin-bottom: 0.3em; }
+.famerow { display: flex; justify-content: space-between; gap: 1em; padding: 0.15em 0; }
+.famerow span { color: var(--muted); }
+.settings .packchip { background: var(--amber); color: var(--ink); border-color: var(--amber); font-weight: 800; }
+
+/* voorstelronde */
+.castshow { width: 100%; text-align: center; }
+.castshow .rno { color: var(--amber); font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; font-size: 1.5em; margin-bottom: 1em; }
+.castgrid { display: flex; flex-wrap: wrap; gap: 1.4em; justify-content: center; max-width: 80em; margin: 0 auto; }
+.castcard { width: 13em; background: var(--ink-2); border: 3px solid var(--c); border-radius: var(--radius); padding: 1.2em 0.8em; display: grid; justify-items: center; gap: 0.2em; animation: castIn 0.7s cubic-bezier(0.2, 1.5, 0.4, 1) both; box-shadow: 0 0.8em 2em rgba(0, 0, 0, 0.4); }
+.castcard .av { width: 2.2em; height: 2.2em; border-radius: 50%; background: var(--c); display: grid; place-items: center; font-size: 2.6em; }
+.castcard b { font-family: var(--display); font-size: 1.9em; }
+.castcard small { color: var(--amber); font-size: 1.2em; font-weight: 700; }
+.castgrid.many .castcard { width: 10em; padding: 0.8em 0.5em; }
+.castgrid.many .castcard .av { font-size: 2em; }
+.castgrid.many .castcard b { font-size: 1.4em; }
+@keyframes castIn { from { opacity: 0; transform: translateY(3em) scale(0.5) rotate(-8deg); } to { opacity: 1; transform: none; } }
+
+/* rad van fortuin */
+.radshow { display: grid; grid-template-columns: auto 1fr; gap: 4em; align-items: center; width: 100%; max-width: 76em; }
+.wheelbox { position: relative; width: min(34em, 62vh); aspect-ratio: 1; }
+.wheel { width: 100%; height: 100%; filter: drop-shadow(0 1em 2em rgba(0, 0, 0, 0.5)); border-radius: 50%; }
+.wheelbox .pointer { position: absolute; left: 50%; top: -0.75em; translate: -50% 0; font-size: 3em; color: var(--amber); z-index: 2; text-shadow: 0 0.1em 0.2em rgba(0, 0, 0, 0.6); }
+.radside { text-align: center; }
+.radside .rno { color: var(--amber); font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; font-size: 1.4em; margin-bottom: 0.6em; }
+.radside h2 { font-family: var(--display); font-size: 4em; margin: 0.2em 0; }
+.radresult, .radtext { opacity: 0; }
+.radshow.done .radresult { animation: pop 0.6s both; opacity: 1; color: var(--amber); }
+.radshow.done .radtext { animation: rise 0.5s 0.4s both; font-size: 1.9em; }
+
+/* de kudde */
+.herd { display: grid; gap: 0.5em; max-width: 56em; margin: 0.6em auto; }
+.herdrow { display: flex; align-items: center; gap: 0.8em; animation: rise 0.5s both; }
+.hbar { display: flex; justify-content: space-between; align-items: center; gap: 1em; background: var(--ink-2); border: 2px solid var(--line); border-radius: 16px; padding: 0.45em 1em; font-size: 1.6em; min-width: 8em; }
+.hbar em { font-style: normal; color: var(--muted); font-size: 0.8em; }
+.herdrow.top .hbar { background: rgba(61, 220, 151, 0.2); border-color: var(--mint); }
+.herdrow.cow .hbar { background: rgba(255, 79, 139, 0.2); border-color: var(--pink); }
+.herdrow.cow .hbar::before { content: '🐄'; margin-right: 0.3em; }
+
+/* golflengte */
+.gscale { max-width: 60em; margin: 1.2em auto 0.6em; }
+.glabels { display: flex; justify-content: space-between; font-family: var(--display); font-weight: 800; font-size: 1.9em; margin-bottom: 0.4em; }
+.glabels span:first-child { color: var(--sky); }
+.glabels span:last-child { color: var(--pink); }
+.gbar { position: relative; height: 5.5em; border-radius: 99px; background: linear-gradient(90deg, rgba(76, 201, 240, 0.35), rgba(155, 123, 255, 0.3), rgba(255, 79, 139, 0.35)); border: 3px solid var(--line); }
+.gq { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 3.4em; font-weight: 800; color: rgba(255, 255, 255, 0.5); animation: pulse 1.4s infinite; }
+.gclue { font-family: var(--display); font-weight: 800; font-size: 3.6em; color: var(--amber); margin: 0.1em 0 0.2em; }
+.gzone { position: absolute; top: 0; bottom: 0; animation: fadeIn 0.6s 1.25s both; }
+.gzone.z3 { background: rgba(255, 182, 39, 0.22); border-radius: 99px; }
+.gzone.z2 { background: rgba(255, 182, 39, 0.4); }
+.gzone.z1 { background: var(--mint); }
+.gtarget { position: absolute; top: 50%; translate: -50% -50%; font-size: 2.6em; animation: pop 0.5s 1.25s both; z-index: 2; }
+.gmark { position: absolute; translate: -50% 0; width: 2em; height: 2em; border-radius: 50%; background: var(--c); display: grid; place-items: center; font-size: 1.5em; box-shadow: 0 0 0 3px var(--ink); animation: pop 0.4s both; z-index: 3; }
+
+/* één woord */
+.ewclues { display: flex; flex-wrap: wrap; gap: 0.7em; justify-content: center; margin: 0.8em auto; max-width: 60em; }
+.ewclue { background: var(--ink-2); border: 3px solid var(--sky); border-radius: 18px; padding: 0.35em 0.9em; font-family: var(--display); font-weight: 800; font-size: 2.4em; display: inline-flex; align-items: center; gap: 0.4em; }
+.ewclue.gone { border-color: var(--line); color: var(--muted); text-decoration: line-through; font-size: 1.6em; opacity: 0.7; }
+.ewclue .who { font-size: 0.5em; }
+.ewguess { font-size: 1.8em; margin-bottom: 0.4em; animation: rise 0.5s 1.4s both; }
+.ewguess.ok b { color: var(--mint); }
+.ewguess.no b { color: var(--bad); }
+
+/* teken-telefoon */
+.ttchain { display: flex; align-items: stretch; justify-content: center; gap: 0.6em; margin: 0.6em auto; }
+.ttcard { flex: 1 1 0; max-width: 19em; background: var(--ink-2); border: 3px solid var(--line); border-radius: var(--radius); padding: 0.7em; display: grid; grid-template-rows: 1fr auto; gap: 0.5em; animation: castIn 0.6s both; }
+.ttcard.top { border-color: var(--amber); box-shadow: 0 0 2em rgba(255, 182, 39, 0.35); }
+.tttext { display: grid; place-items: center; text-align: center; font-size: 1.55em; font-weight: 700; line-height: 1.3; min-height: 8em; }
+.ttdraw { background: #fff8ec; border-radius: 14px; overflow: hidden; align-self: center; }
+.ttdraw .drawing { width: 100%; height: auto; aspect-ratio: 1; box-shadow: none; border-radius: 0; display: block; }
+.ttarrow { align-self: center; font-size: 2em; color: var(--amber); animation: fadeIn 0.4s both; }
+.ttstep { text-align: center; color: var(--muted); font-size: 0.95em; text-transform: uppercase; letter-spacing: 0.1em; }
+.ttby { display: flex; align-items: center; gap: 0.4em; justify-content: center; font-weight: 700; font-size: 1.1em; }
+.ttby i { font-style: normal; width: 1.6em; height: 1.6em; border-radius: 50%; display: grid; place-items: center; background: var(--c); }
