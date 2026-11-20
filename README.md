@@ -6,7 +6,9 @@ Quizavond in je eigen woonkamer. De TV toont het spel, iedereen speelt mee op zi
 
 1. Open `tv.html` op de TV (browser van de TV, of cast een Chrome-tabblad naar Chromecast / Google TV).
 2. Iedereen scant de QR-code of tikt de code van 4 letters in op `play.html`.
-3. Wie als eerste binnen is, wordt spelleider 👑 en kiest spice level, lengte en start.
+3. Wie als eerste binnen is, wordt spelleider 👑, kiest een avond (zie *Avonden*), hoe pittig en hoe lang, en start.
+
+Iedereen kiest op zijn telefoon een naam, poppetje en kleur.
 
 Telefoon op slot of pagina herladen? Je komt vanzelf terug op je plek, met je punten. Crasht de TV, herlaad dan gewoon: het spel staat gepauzeerd klaar en de telefoons verbinden opnieuw.
 
@@ -17,8 +19,13 @@ Telefoon op slot of pagina herladen? Je komt vanzelf terug op je plek, met je pu
 - **Spannende onthullingen:** tromgeroffel, eerst valt het foute weg, dan licht het goede antwoord op, met confetti. In de tussenstand zie je spelers elkaar inhalen.
 - **Uitleg per ronde:** de eerste keer dat een ronde langskomt, staat op TV en telefoon in drie stappen hoe het werkt.
 - **Terugblik:** aan het eind de beste bluf, het mooiste kunstwerk, de beste verhaalzin en meer, daarna de winnaar.
+- **Voorstelrondje:** bij de start krijgt iedereen een bijnaam ("Ria, de Professor").
+- **Reacties:** stuur vanaf je telefoon 😂 👏 🔥 🍅 naar de TV terwijl je wacht.
+- **Rad van Fortuin:** om de ronde mag wie laatst staat aan het rad draaien (punten, power-up, stelen of pech). Uit te zetten.
+- **Drankspel (optioneel):** de TV zegt na elke vraag wie een slokje neemt. Staat standaard uit.
+- **Eregalerij:** de TV onthoudt de winnaars van eerdere avonden en toont ze in de lobby.
 - **Wachten op je telefoon:** een weetje, noppenfolie om te knappen of je eigen statistieken.
-- **Bediening voor de spelleider** (👑 Bediening): pauze, volgende stap, +15 seconden, vraag of ronde overslaan, muziek, effecten, voorlezen en grote tekst aan of uit.
+- **Bediening voor de spelleider** (👑 Bediening): pauze, volgende stap, +15 seconden, vraag of ronde overslaan, muziek, effecten, voorlezen, grote tekst, drankspel en rad aan of uit.
 
 ## Online zetten (GitHub Pages)
 
@@ -45,6 +52,11 @@ Na een minuutje staat het op `https://jonfreak89.github.io/GN/`.
 | Echt of verzonnen? | Het begin van een waargebeurd verhaal: verzin hoe het afliep en zoek het echte einde |
 | Invulverhaal | Vul woorden in zonder te weten waar het over gaat, de TV leest het verhaal voor. Stem op het grappigste woord |
 | Verhalenketting | Iedereen schrijft om de beurt een zin en ziet alleen de vorige. Daarna voorlezen en stemmen op de beste zin |
+| Emoji-raadsel | Welke film, welk liedje of gezegde staat hier in emoji's? |
+| De kudde | Typ wat de meeste anderen ook zullen typen. De grootste groep scoort, de enige eenling krijgt de roze koe |
+| Golflengte | Eén speler ziet een geheim punt op een schaal en geeft een hint, de rest schuift naar waar het ligt |
+| Eén woord | Iedereen geeft één hint van één woord, dubbele hints vallen weg, de rader moet het woord vinden |
+| Teken-telefoon | Zin → tekening → zin → tekening. Aan het eind zie je hoe het uit de hand liep |
 | Finale | Zet in wat je durft op één laatste vraag |
 
 Extra's: de laatste plaats kiest de categorie, power-ups (Dubbel, 50/50, Stelen, Sabotage, Schild), troost-power-up voor de laatste na elke ronde, awards aan het eind, anonieme overslaan-knop bij 18+ vragen.
@@ -53,11 +65,13 @@ Extra's: de laatste plaats kiest de categorie, power-ups (Dubbel, 50/50, Stelen,
 
 **Ganzenbord:** kies als spelvorm *Ganzenbord* in plaats van *Quizshow*. Dan speel je korte rondes (kort 8, normaal 12, lang 16) en na elke ronde gooit iedereen op zijn telefoon de dobbelsteen. De beste drie van de ronde krijgen 3, 2 of 1 bonusstap. Met ganzen, brug, herberg, put, doolhof, gevangenis, dood, kansvakjes en sterren (power-up). Wie precies op 40 komt, wint.
 
-**Thema-avonden:** 🧙 Nerd-avond (fantasy, sci-fi, superhelden, games, film, wetenschap) of 📼 Jaren 80 & 90 (jaren, kinder-tv, reclames, muziek, games, film). Het thema verandert ook de look op TV en telefoon.
+**Avonden:** de spelleider kiest met één tik een kant-en-klare avond: De grote mix, Snel potje, Kennisquiz, Bluf & bedrog, Ken je elkaar?, Samen sterk, Creatief, Ganzenbord, Sinterklaasavond, Kerstavond, Nerd-avond of Jaren 80 & 90. Onder *Zelf samenstellen* kun je alles nog met de hand aan- en uitzetten.
+
+**Thema-avonden:** 🎁 Sinterklaasavond (met pepernoten op het scherm), 🎄 Kerstavond (met sneeuw), 🧙 Nerd-avond (fantasy, sci-fi, superhelden, games, film, wetenschap) of 📼 Jaren 80 & 90 (jaren, kinder-tv, reclames, muziek, games, film). Het thema verandert ook de look op TV en telefoon.
 
 **Spice levels:** 😇 Braaf (kennis en rare weetjes) · 😈 Pittig (+ donkere humor) · 🌶️ Stout (+ 18+).
 
-**41 categorieën**, van Kennis (o.a. Nederland, geschiedenis, kunst & cultuur, merken & bedrijven, reizen) en Nerd (fantasy, sci-fi, superhelden) tot Nostalgie, Grappig & raar (o.a. domme criminelen, bier & kroeg), Donker (o.a. onopgeloste mysteries, oorlog & spionage), Pittig (kater & feestjes) en Stout (o.a. stoute geschiedenis). Samen zo'n 1.770 vaste vragen, plus gegenereerde.
+**43 categorieën** (waarvan Sinterklaas en Kerst alleen op hun eigen avond), van Kennis (o.a. Nederland, geschiedenis, kunst & cultuur, merken & bedrijven, reizen) en Nerd (fantasy, sci-fi, superhelden) tot Nostalgie, Grappig & raar (o.a. domme criminelen, bier & kroeg), Donker (o.a. onopgeloste mysteries, oorlog & spionage), Pittig (kater & feestjes) en Stout (o.a. stoute geschiedenis). Samen ruim 1.800 vaste vragen, plus gegenereerde.
 
 **Nooit dezelfde vragen:** de TV onthoudt welke vragen al geweest zijn en herhaalt pas als een categorie op is. Schatten, volgorde en hoofdsteden worden ook gegenereerd uit datatabellen (duizenden combinaties).
 

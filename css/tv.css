@@ -430,7 +430,7 @@ body.bigtext #board .pchip { font-size: 0.85em; }
 .panel.wide { max-width: 92em; }
 .emojiq { text-align: center; font-size: 6.5em; line-height: 1.15; letter-spacing: 0.08em; margin: 0.05em 0 0.1em; }
 .qtext.small { font-size: 1.9em; color: var(--muted); margin-bottom: 0.6em; }
-.sips { text-align: center; margin: 0.8em auto 0; background: rgba(255, 182, 39, 0.16); border: 2px solid var(--amber); border-radius: 99px; padding: 0.35em 1.2em; font-size: 1.5em; width: fit-content; animation: rise 0.5s 2.3s both; }
+.sips { position: fixed; top: 1.25em; left: 66%; translate: -50% 0; z-index: 6; text-align: center; margin: 0; max-width: 36vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(255, 182, 39, 0.16); border: 2px solid var(--amber); border-radius: 99px; padding: 0.3em 1em; font-size: 1.25em; width: fit-content; animation: fadeIn 0.5s 2.3s both; }
 
 /* reacties */
 #reacts { position: fixed; inset: 0; z-index: 7; pointer-events: none; overflow: hidden; }
@@ -443,7 +443,7 @@ body.bigtext #board .pchip { font-size: 0.85em; }
 .famehead { font-family: var(--display); font-weight: 800; color: var(--amber); margin-bottom: 0.3em; }
 .famerow { display: flex; justify-content: space-between; gap: 1em; padding: 0.15em 0; }
 .famerow span { color: var(--muted); }
-.settings .packchip { background: var(--amber); color: var(--ink); border-color: var(--amber); font-weight: 800; }
+.settings span.packchip { background: var(--amber); color: var(--ink); border-color: var(--amber); font-weight: 800; }
 
 /* voorstelronde */
 .castshow { width: 100%; text-align: center; }
@@ -514,3 +514,4 @@ body.bigtext #board .pchip { font-size: 0.85em; }
 .ttstep { text-align: center; color: var(--muted); font-size: 0.95em; text-transform: uppercase; letter-spacing: 0.1em; }
 .ttby { display: flex; align-items: center; gap: 0.4em; justify-content: center; font-weight: 700; font-size: 1.1em; }
 .ttby i { font-style: normal; width: 1.6em; height: 1.6em; border-radius: 50%; display: grid; place-items: center; background: var(--c); }
+.lobby .joinbox { position: relative; z-index: 3; } /* sneeuw en pepernoten nooit over de QR-code */

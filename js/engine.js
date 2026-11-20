@@ -147,21 +147,22 @@
     name(id) { const p = this.s.players[id]; return p ? p.name : '?'; }
 
     // ---------- spelers ----------
-    join({ token, name, avatar }) {
+    join({ token, name, avatar, color: want }) {
+      avatar = avatar ? String(avatar).slice(0, 8) : avatar;
       const s = this.s;
       let p = Object.values(s.players).find((x) => x.token === token && token);
       name = String(name || '').trim().slice(0, 16) || 'Speler';
       if (p) {
         p.connected = true;
         p.lastSeen = this.now();
-        if (s.step.kind === 'lobby') { p.name = name; if (avatar) p.avatar = avatar; }
+        if (s.step.kind === 'lobby') { p.name = name; if (avatar) p.avatar = avatar; if (COLORS.includes(want)) p.color = want; }
         if (!s.gm || !s.players[s.gm]) this.assignGm();
         this.changed();
         return p.id;
       }
       const id = 'p' + Math.floor(this.rand() * 1e9).toString(36) + s.order.length;
       const used = new Set(this.players.map((x) => x.color));
-      const color = COLORS.find((c) => !used.has(c)) || this.pick(COLORS);
+      const color = COLORS.includes(want) && !used.has(want) ? want : COLORS.find((c) => !used.has(c)) || this.pick(COLORS);
       const inGame = s.step.kind !== 'lobby';
       const scores = this.contestants().map((x) => x.score);
       p = {

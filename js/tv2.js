@@ -19,7 +19,7 @@
         const [tx, ty] = pt(mid, 60);
         const dark = WCOL[i % WCOL.length] === '#3a2f6b';
         return `<path d="M0 0 L${x0.toFixed(2)} ${y0.toFixed(2)} A96 96 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z" fill="${WCOL[i % WCOL.length]}" stroke="#1b1440" stroke-width="1.5"/>
-          <text x="${tx.toFixed(2)}" y="${ty.toFixed(2)}" transform="rotate(${mid} ${tx.toFixed(2)} ${ty.toFixed(2)})" text-anchor="middle" dominant-baseline="middle" font-size="9.5" font-weight="800" fill="${dark ? '#fff8ec' : '#1b1440'}">${esc(label)}</text>`;
+          <text x="${tx.toFixed(2)}" y="${ty.toFixed(2)}" transform="rotate(${mid} ${tx.toFixed(2)} ${ty.toFixed(2)})" text-anchor="middle" dominant-baseline="middle" font-size="${label.length > 9 ? 7 : label.length > 6 ? 8.2 : 9.5}" font-weight="800" fill="${dark ? '#fff8ec' : '#1b1440'}">${esc(label)}</text>`;
       }).join('');
       return `<div class="wheelbox"><div class="pointer">▼</div><svg class="wheel" viewBox="-100 -100 200 200">${parts}<circle r="12" fill="#1b1440" stroke="#ffb627" stroke-width="3"/></svg></div>`;
     }

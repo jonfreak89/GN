@@ -68,7 +68,7 @@
     data(id, m) {
       if (!m || typeof m !== 'object') return;
       if (m.t === 'join') {
-        const pid = engine.join({ token: String(m.token || '').slice(0, 64), name: m.name, avatar: m.avatar });
+        const pid = engine.join({ token: String(m.token || '').slice(0, 64), name: m.name, avatar: m.avatar, color: m.color });
         // oude verbinding van dezelfde speler loslaten
         bind.forEach((p, c) => { if (p === pid && c !== id) { bind.delete(c); lastSent.delete(c); net.drop(c); } });
         bind.set(id, pid);
@@ -543,7 +543,7 @@
     const pk = (GN.PACKS || []).find((x) => x.id === v.settings.pack);
     const pkc = pk ? `<span class="packchip">${pk.emoji} ${esc(pk.name)}</span>` : v.settings.pack === 'eigen' ? '<span class="packchip">🛠️ Eigen mix</span>' : '';
     const dr = v.settings.drink ? '<span>🍺 Drankspel</span>' : '';
-    return `${pkc}${pk && (pk.theme || pk.mode) ? '' : th + md}${dr}<span>${sp.emoji} ${sp.name}</span><span>⏱️ ${esc(v.settings.length)} (${GN.LENGTHS[v.settings.length]})</span>${v.settings.teams ? `<span>👥 ${v.settings.teams} teams</span>` : ''}${v.settings.voice ? '<span>🔊 Voorlezen</span>' : ''}${!v.settings.gmPlays ? '<span>🎙️ Spelleider presenteert</span>' : ''}${off.length ? `<span>🚫 Zonder: ${esc(off.join(', '))}</span>` : ''}`;
+    return `${pkc}${pk && (pk.theme || pk.mode) ? '' : th + md}${dr}<span>${sp.emoji} ${sp.name}</span><span>⏱️ ${esc(v.settings.length)} (${GN.LENGTHS[v.settings.length]})</span>${v.settings.teams ? `<span>👥 ${v.settings.teams} teams</span>` : ''}${v.settings.voice ? '<span>🔊 Voorlezen</span>' : ''}${!v.settings.gmPlays ? '<span>🎙️ Spelleider presenteert</span>' : ''}${off.length && !pk ? `<span>🚫 Zonder: ${esc(off.join(', '))}</span>` : ''}`;
   };
   const lobbyHint = (v) => {
     const gm = v.players.find((p) => p.gm);
