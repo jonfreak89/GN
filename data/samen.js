@@ -227,12 +227,10 @@ GN.EMOJI = [
 /* ---------- uitbreiding ---------- */
 GN.KUDDE.push(
   { q: 'Noem een smaak chips.', b: ['paprika', 'naturel', 'paprika'] },
-  { q: 'Noem iets wat je meeneemt naar het strand.', b: ['handdoek', 'zonnebrand', 'handdoek'] },
   { q: 'Noem een Nederlands tv-programma.', b: ['Boer zoekt vrouw', 'Wie is de Mol', 'Boer zoekt vrouw'] },
   { q: 'Noem een ding dat altijd kwijt is.', b: ['sleutels', 'afstandsbediening', 'sleutels'] },
   { q: 'Noem een broodje van de bakker.', b: ['croissant', 'krentenbol', 'croissant'] },
   { q: 'Noem iets wat je in de schuur vindt.', b: ['fiets', 'gereedschap', 'fiets'] },
-  { q: 'Noem een supermarkt.', b: ['Albert Heijn', 'Jumbo', 'Albert Heijn'] },
   { q: 'Noem een spel dat je met Kerst speelt.', b: ['Monopoly', 'Kolonisten', 'Monopoly'] },
   { q: 'Noem een Waddeneiland.', b: ['Texel', 'Terschelling', 'Texel'] },
   { q: 'Noem iets wat je op een verjaardag eet.', b: ['taart', 'kaas', 'taart'] },
