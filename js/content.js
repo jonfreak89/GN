@@ -16,6 +16,8 @@
     { id: 'film', name: 'Films & series', emoji: '🎬', group: 'Kennis', spice: 1 },
     { id: 'games', name: 'Games', emoji: '🎮', group: 'Kennis', spice: 1 },
     { id: 'muziek', name: 'Muziek', emoji: '🎵', group: 'Kennis', spice: 1 },
+    { id: 'sinterklaas', name: 'Sinterklaas', emoji: '🎁', group: 'Seizoen', spice: 1, season: true },
+    { id: 'kerst', name: 'Kerst & oud en nieuw', emoji: '🎄', group: 'Seizoen', spice: 1, season: true },
     { id: 'kunst', name: 'Kunst & cultuur', emoji: '🖼️', group: 'Kennis', spice: 1 },
     { id: 'merken', name: 'Merken & bedrijven', emoji: '🏷️', group: 'Kennis', spice: 1 },
     { id: 'reizen', name: 'Reizen & vakantie', emoji: '✈️', group: 'Kennis', spice: 1 },
@@ -111,6 +113,9 @@
     schild: { name: 'Schild', emoji: '🛡️', desc: 'Blokkeert automatisch de eerste steel- of sabotage-actie tegen jou.', passive: true },
   };
   GN.AVATARS = ['🦊', '🐸', '🐙', '🦄', '🐻', '🐼', '🐯', '🦁', '🐷', '🐵', '🦉', '🐔', '🦖', '🐢', '🦀', '🐝', '👽', '🤖', '👻', '🎃', '🧙', '🧛', '🧟', '🥷', '🤠', '🦩', '🦦', '🐌', '🥨', '🍄'];
+  GN.COLORS = ['#ff5d73', '#ffb627', '#3ddc97', '#4cc9f0', '#b388ff', '#ff8fab', '#f9f871', '#62d2a2', '#ff9a3c', '#7aa2ff', '#e36bae', '#9be564'];
+  // reacties die spelers naar de TV kunnen sturen
+  GN.REACTS = ['😂', '👏', '😱', '🔥', '🍅', '❤️', '💩', '🥱'];
   GN.PALETTE = ['#1d1a2f', '#ff4f8b', '#4cc9f0', '#ffb627', '#3ddc97', '#9b7bff', '#8b5a2b', '#ffffff'];
   GN.WIDTHS = [7, 16, 34];
   GN.drawingSvg = function (d, cls) {
@@ -151,5 +156,26 @@ GN.HOWTO = {
   leugen: [['✍️', 'Schrijf drie dingen over jezelf'], ['🤥', 'Twee zijn waar, één is gelogen'], ['🔍', 'Zoek bij de anderen de leugen']],
   ketting: [['📜', 'Schrijf de volgende zin van een verhaal'], ['🙈', 'Je ziet alleen de zin ervoor'], ['😂', 'Aan het eind lezen we alles voor en stemmen we']],
   wiezei: [['✍️', 'Iedereen beantwoordt dezelfde vraag, anoniem'], ['🗯️', 'Per antwoord raad je wie het schreef'], ['😈', 'Niemand die jou raadt? Punten voor jou']],
+  kudde: [['🐑', 'Iedereen krijgt dezelfde open vraag'], ['🤝', 'Typ wat volgens jou de meeste anderen ook zeggen'], ['🐄', 'Grootste groep scoort. Als enige iets anders? Roze koe!']],
+  golf: [['📡', 'Eén speler ziet een geheim punt op een schaal'], ['💬', 'Die geeft één hint'], ['🎚️', 'De rest schuift zo dicht mogelijk bij het punt']],
+  woord: [['🙈', 'Eén speler moet een geheim woord raden'], ['☝️', 'De rest geeft elk een hint van precies één woord'], ['✖️', 'Dubbele hints vallen weg, dus wees origineel']],
+  emoji: [['😎', 'Op de TV staan emoji\'s'], ['🤔', 'Welke film, welk lied of welk gezegde is het?'], ['✅', 'Kies het goede antwoord op je telefoon']],
+  telefoon: [['✍️', 'Schrijf een zin'], ['🎨', 'De volgende tekent hem, de volgende beschrijft die tekening'], ['😂', 'Aan het eind zie je hoe het ontspoorde']],
   final: [['💰', 'Eén laatste vraag'], ['🎲', 'Zet zoveel van je punten in als je durft'], ['🏆', 'Goed = je inzet erbij, fout = je inzet kwijt']],
 };
+
+/* ---------- Speelpakketten: kant-en-klare avonden ---------- */
+GN.PACKS = [
+  { id: 'mix', name: 'De grote mix', emoji: '🎉', desc: 'Van alles wat: de TV kiest een afwisselende avond.' },
+  { id: 'snel', name: 'Snel potje', emoji: '⚡', desc: 'Kort en vlot: meerkeuze, waar of nep, emoji\'s en hoger/lager.', length: 'kort', rounds: ['mc', 'tf', 'emoji', 'hl'] },
+  { id: 'kennis', name: 'Kennisquiz', emoji: '🧠', desc: 'Voor de betweters: vragen, schatten, volgorde, Lingo en De Puzzel.', rounds: ['mc', 'tf', 'emoji', 'hl', 'num', 'order', 'lingo', 'puzzel'] },
+  { id: 'bluf', name: 'Bluf & bedrog', emoji: '🤥', desc: 'Liegen, verzinnen en elkaar erin luizen.', rounds: ['bluff', 'echt', 'leugen', 'wiezei', 'tf'] },
+  { id: 'kenje', name: 'Ken je elkaar?', emoji: '🫣', desc: 'Het gaat over jullie: hete stoel, Top 5, kudde en golflengte.', rounds: ['persoonlijk', 'top5', 'kudde', 'golf', 'leugen', 'wiezei'] },
+  { id: 'samen', name: 'Samen sterk', emoji: '🤝', desc: 'Denk hetzelfde, voel elkaar aan en raad samen: kudde, golflengte, één woord.', rounds: ['kudde', 'golf', 'woord', 'top5', 'emoji'] },
+  { id: 'creatief', name: 'Creatief', emoji: '🎨', desc: 'Tekenen en verhalen: Teken & Raad, Teken-telefoon, invulverhaal, verhalenketting.', rounds: ['teken', 'telefoon', 'invul', 'ketting', 'woord'] },
+  { id: 'bord', name: 'Ganzenbord', emoji: '🪿', desc: 'Korte rondes, dobbelen en als eerste op vakje 40 staan.', mode: 'bord' },
+  { id: 'sint', name: 'Sinterklaasavond', emoji: '🎁', desc: 'Pakjesavond-quiz met vragen over de Sint, pepernoten en surprises.', theme: 'sint', rounds: ['mc', 'tf', 'emoji', 'num', 'bluff', 'order', 'kudde', 'top5', 'invul', 'teken'] },
+  { id: 'kerst', name: 'Kerstavond', emoji: '🎄', desc: 'Kerstfilms, kerstliedjes en gourmetten. Met sneeuw.', theme: 'kerst', rounds: ['mc', 'tf', 'emoji', 'num', 'bluff', 'order', 'kudde', 'golf', 'top5', 'woord'] },
+  { id: 'nerd', name: 'Nerd-avond', emoji: '🧙', desc: 'Fantasy, sci-fi, superhelden en games.', theme: 'nerd', rounds: ['mc', 'tf', 'emoji', 'hl', 'num', 'bluff', 'order', 'lingo', 'puzzel'] },
+  { id: 'retro', name: 'Jaren 80 & 90', emoji: '📼', desc: 'Nostalgie: tv van vroeger, oude reclames en foute hits.', theme: 'retro', rounds: ['mc', 'tf', 'emoji', 'hl', 'num', 'bluff', 'order', 'kudde', 'top5'] },
+];

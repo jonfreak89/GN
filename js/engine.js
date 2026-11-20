@@ -34,6 +34,8 @@
   const ORDER = ['mc', 'tf', 'hl', 'num', 'lingo', 'bluff', 'echt', 'order', 'puzzel', 'invul', 'teken', 'persoonlijk', 'top5', 'leugen', 'ketting', 'wiezei'];
   // Thema-avonden: beperken de categorieën (andere rondes blijven gewoon meedoen)
   const THEMES = {
+    sint: { name: 'Sinterklaas', emoji: '🎁', cats: ['sinterklaas', 'eten', 'nederland', 'kindertv', 'jaren', 'reclames'] },
+    kerst: { name: 'Kerst', emoji: '🎄', cats: ['kerst', 'film', 'muziek', 'eten', 'weetjes'] },
     nerd: { name: 'Nerd-avond', emoji: '🧙', cats: ['fantasy', 'scifi', 'superhelden', 'games', 'film', 'wetenschap'] },
     retro: { name: 'Jaren 80 & 90', emoji: '📼', cats: ['jaren', 'kindertv', 'reclames', 'muziek', 'games', 'film'] },
   };
@@ -47,7 +49,7 @@
   const BOARD_ROUNDS = { kort: 8, normaal: 12, lang: 16 };
   const SLOTS = { kort: 6, normaal: 8, lang: 11 };
   const LENGTHS = { kort: '6 rondes, ± 25 min', normaal: '8 rondes, ± 35 min', lang: '11 rondes, ± 50 min' };
-  const ROUND_KEYS = ORDER.slice();
+  const ROUND_KEYS = ORDER; // zelfde lijst: uitbreidingen komen er vanzelf bij
   const TEAMS = [
     { name: 'Team Patat', emoji: '🍟', color: '#ffb627' },
     { name: 'Team Tulp', emoji: '🌷', color: '#ff4f8b' },
@@ -58,7 +60,31 @@
   const PU_KEYS = Object.keys(POWERUPS);
 
   const AVATARS = GN.AVATARS;
-  const COLORS = ['#ff5d73', '#ffb627', '#3ddc97', '#4cc9f0', '#b388ff', '#ff8fab', '#f9f871', '#62d2a2', '#ff9a3c', '#7aa2ff', '#e36bae', '#9be564'];
+  const COLORS = GN.COLORS;
+  // korte rondes voor Ganzenbord
+  const SHORT = { mc: 3, tf: 4, hl: 4, num: 2, lingo: 1, bluff: 2, order: 2, puzzel: 1, teken: 1, persoonlijk: 3, top5: 2, leugen: 1, wiezei: 1, invul: 1, ketting: 1, echt: 2 };
+  // minimaal aantal spelers per ronde
+  const MINP = { persoonlijk: 2, wiezei: 3, teken: 3, leugen: 3, top5: 2, invul: 2, ketting: 2 };
+  // Uitbreidingen (js/rounds2.js) haken hier in: extra rondes en stappen zonder deze file te wijzigen
+  const EXT = { rounds: {}, steps: {}, reveals: {} };
+  GN.addRound = (type, def) => {
+    ROUNDS[type] = { title: def.title, emoji: def.emoji, desc: def.desc, pick: 0 };
+    COUNTS[type] = def.counts;
+    SHORT[type] = def.short || 1;
+    if (def.min) MINP[type] = def.min;
+    const at = def.after ? ORDER.indexOf(def.after) + 1 : ORDER.length;
+    if (!ORDER.includes(type)) ORDER.splice(at || ORDER.length, 0, type);
+    EXT.rounds[type] = def;
+  };
+  GN.addStep = (kind, def) => { EXT.steps[kind] = def; };
+  GN.addReveal = (of, def) => { EXT.reveals[of] = def; };
+  // onthullingen zonder goed/fout (voor drankspel en geluid)
+  const NOJUDGE = ['poll', 'wie', 'iv', 'kt', 'top5'];
+  const NICKS = ['de Sluwe', 'het Orakel', 'de Gokker', 'de Bluffer', 'het Wonderkind', 'de Stille Kracht', 'de Chaoot', 'de Professor', 'de Underdog', 'de Kanshebber', 'het Feestbeest', 'de Rekenwonder', 'de Mensenkenner', 'de Titelverdediger', 'de Verrassing', 'de Nachtuil', 'de Betweter', 'het Natuurtalent', 'de Onverschrokkene', 'de Twijfelaar', 'de Snackkoning', 'de Dromer', 'de Strateeg', 'het Geheime Wapen'];
+  const WHEEL = [
+    { k: 'p', v: 100, label: '+100' }, { k: 'pu', label: 'Power-up' }, { k: 'p', v: 200, label: '+200' }, { k: 'none', label: 'Helaas…' },
+    { k: 'steal', v: 100, label: 'Steel 100' }, { k: 'p', v: 50, label: '+50' }, { k: 'all', v: 50, label: 'Iedereen +50' }, { k: 'p', v: 300, label: '+300' },
+  ];
   const BOT_NAMES = ['Bot Bertje', 'Bot Truus', 'Bot Henk', 'Bot Ingrid', 'Bot Kees', 'Bot Greet'];
   const BOT_LIES = [
     { s: ['Ik ben een robot', 'Ik heb nog nooit geslapen', 'Ik ben dol op kaas'], lie: 2 },
@@ -83,13 +109,14 @@
       this.seen = opts.seen || {};
       this.onChange = opts.onChange || (() => {});
       this.onSeen = opts.onSeen || (() => {});
+      this.onReact = opts.onReact || (() => {});
       this.botQueue = [];
       this.s = {
         code: opts.code || '',
         players: {},
         order: [],
         gm: null,
-        settings: { spice: 2, length: 'normaal', gmPlays: true, voice: false, teams: 0, rounds: {}, theme: '', mode: 'quiz', music: true, sfx: true, bigText: false },
+        settings: { spice: 2, length: 'normaal', gmPlays: true, voice: false, teams: 0, rounds: {}, theme: '', mode: 'quiz', music: true, sfx: true, bigText: false, drink: false, wheel: true, pack: '' },
         step: { kind: 'lobby', id: 0 },
         paused: null,
         plan: [],
@@ -225,8 +252,8 @@
     unseenCount(type, cat) { return this.poolFor(type, cat).filter((q) => !this.seen[q.id]).length + this.gensFor(type, cat).length * 50; }
     eligibleCats(type) {
       const spice = this.s.settings.spice;
-      const all = GN.CATEGORIES.filter((c) => c.spice <= spice && (this.poolFor(type, c.id).length || this.gensFor(type, c.id).length));
       const th = THEMES[this.s.settings.theme];
+      const all = GN.CATEGORIES.filter((c) => c.spice <= spice && (!c.season || (th && th.cats.includes(c.id))) && (this.poolFor(type, c.id).length || this.gensFor(type, c.id).length));
       if (!th) return all;
       const inTheme = all.filter((c) => th.cats.includes(c.id));
       return inTheme.length ? inTheme : all;
@@ -313,7 +340,14 @@
       s.howtoSeen = {};
       if (this.teamCount()) this.players.forEach((p) => { if (p.playing && (p.team == null || p.team >= this.teamCount())) p.team = this.smallestTeam(p.id); });
       s.roundIdx = -1;
+      s.wheels = 0;
+      if (this.contestants().length >= 2) return this.startCast();
       this.nextRound();
+    }
+    startCast() {
+      const nicks = this.shuffle(NICKS);
+      const cast = this.contestants().map((p, i) => { p.nick = nicks[i % nicks.length]; return { id: p.id, nick: p.nick }; });
+      this.newStep('cast', { cast }, Math.min(24, 3.5 + cast.length * 2.2));
     }
     buildPlan() {
       const s = this.s;
@@ -347,7 +381,7 @@
       const n = BOARD_ROUNDS[s.settings.length] || 12;
       const types = ORDER.filter((t) => on[t] !== false);
       if (!types.length) types.push('mc');
-      const short = { mc: 3, tf: 4, hl: 4, num: 2, lingo: 1, bluff: 2, order: 2, puzzel: 1, teken: 1, persoonlijk: 3, top5: 2, leugen: 1, wiezei: 1, invul: 1, ketting: 1, echt: 2 };
+      const short = SHORT;
       const plan = [];
       let bag = [];
       while (plan.length < n) {
@@ -363,12 +397,7 @@
       s.roundIdx++;
       const r = s.plan[s.roundIdx];
       if (!r) return this.endGame();
-      if (r.type === 'persoonlijk' && this.contestants().length < 2) return this.nextRound();
-      if (r.type === 'wiezei' && this.contestants().length < 3) return this.nextRound();
-      if (r.type === 'teken' && this.contestants().length < 3) return this.nextRound();
-      if (r.type === 'leugen' && this.contestants().length < 3) return this.nextRound();
-      if (r.type === 'top5' && this.contestants().length < 2) return this.nextRound();
-      if ((r.type === 'invul' || r.type === 'ketting') && this.contestants().length < 2) return this.nextRound();
+      if (MINP[r.type] && this.contestants().length < MINP[r.type]) return this.nextRound();
       const startScores = {};
       this.contestants().forEach((p) => (startScores[p.id] = p.score));
       s.round = { type: r.type, count: r.count, done: 0, cat: null, usedCats: [], startScores };
@@ -384,6 +413,7 @@
       if (r.done >= r.count) return this.roundScores();
       const R = ROUNDS[r.type];
       if (r.type === 'final') return this.startFinal();
+      if (EXT.rounds[r.type]) return EXT.rounds[r.type].ask.call(this);
       if (r.type === 'persoonlijk') return this.askPersonal();
       if (r.type === 'wiezei') return this.askWz();
       if (r.type === 'hl') return this.askHL();
@@ -1081,8 +1111,11 @@
       this.botQueue = [];
       const st = this.s.step;
       const answering = ['catpick', 'mc', 'tf', 'num', 'bet', 'bluffWrite', 'bluffVote', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'wzGuess', 'hl', 'lingo', 'puzzel', 'tkDraw', 'tkFake', 'tkVote', 'lgWrite', 'lgGuess', 'top5', 'roll', 'ivWrite', 'ivVote', 'ktWrite', 'ktVote', 'wager', 'final'];
-      if (!answering.includes(st.kind)) return;
+      const ext = EXT.steps[st.kind];
+      if (!answering.includes(st.kind) && !(ext && ext.bot) && st.kind !== 'rad') return;
       this.players.filter((p) => p.isBot && p.playing).forEach((b) => {
+        if (st.kind === 'rad' && st.spinner !== b.id) return;
+        if (ext && ext.need && !ext.need.call(this, st).some((x) => x.id === b.id)) return;
         if (st.kind === 'catpick' && st.picker !== b.id) return;
         if (st.kind === 'wzGuess' && st.author === b.id) return;
         if ((st.kind === 'tkFake' || st.kind === 'tkVote') && st.artist === b.id) return;
@@ -1103,6 +1136,8 @@
     botAct(id) {
       const st = this.s.step;
       const R = () => this.rand();
+      if (st.kind === 'rad') return this.action(id, { a: 'spin' });
+      if (EXT.steps[st.kind] && EXT.steps[st.kind].bot) return EXT.steps[st.kind].bot.call(this, id, st);
       switch (st.kind) {
         case 'catpick': return this.action(id, { a: 'pickcat', cat: this.pick(st.options) });
         case 'mc': case 'final': case 'tf': return this.action(id, { a: 'answer', v: R() < 0.55 ? st.correct : Math.floor(R() * st.options.length) });
@@ -1186,9 +1221,16 @@
         if (!isGm) return;
         return this.gmAction(act);
       }
+      if (act.a === 'react') {
+        const now = this.now();
+        if (!(GN.REACTS || []).includes(act.e) || now - (p.lastReact || 0) < 600) return;
+        p.lastReact = now;
+        return this.onReact(id, act.e);
+      }
       if (act.a === 'profile' && st.kind === 'lobby') {
         p.name = String(act.name || p.name).trim().slice(0, 16) || p.name;
-        if (act.avatar) p.avatar = act.avatar;
+        if (act.avatar && !p.isBot && String(act.avatar).length <= 8) p.avatar = String(act.avatar);
+        if (COLORS.includes(act.color)) p.color = act.color;
         return this.changed();
       }
       if (act.a === 'team' && st.kind === 'lobby' && this.teamCount() && p.playing) {
@@ -1208,6 +1250,8 @@
       if (act.a === 'powerup') return this.usePowerup(p, act);
       if (act.a === 'guess' && st.kind === 'lingo') return this.lingoGuess(p, act.v);
       if (act.a === 'roll') return this.rollDice(p);
+      if (act.a === 'spin') { if (st.kind === 'rad' && st.spinner === id) this.spinWheel(); return; }
+      if (EXT.steps[st.kind] && EXT.steps[st.kind].action) return EXT.steps[st.kind].action.call(this, id, act, p);
       if (act.a === 'group' && st.kind === 'puzzel') return this.puzzelGroup(p, act.v);
       if (act.a === 'draw' && st.kind === 'tkDraw') {
         if (st.answers[id] !== undefined) return;
@@ -1348,6 +1392,7 @@
       const note = anonymous ? 'Iemand sloeg de vorige vraag over 🙈' : 'De spelleider sloeg de vorige vraag over ⏭️';
       // power-ups teruggeven die al gebruikt waren
       Object.entries(st.powerups || {}).forEach(([pid, pu]) => { const p = this.s.players[pid]; if (p) p.powerups.push(pu.type); });
+      if (EXT.rounds[this.s.round.type]) return EXT.rounds[this.s.round.type].ask.call(this);
       if (this.s.round.type === 'persoonlijk') return this.askPersonal();
       if (this.s.round.type === 'wiezei') return this.askWz();
       if (this.s.round.type === 'lingo') return this.askLingo();
@@ -1387,7 +1432,7 @@
       switch (act.a) {
         case 'gm:settings': {
           const n = act.settings || {};
-          ['music', 'sfx', 'voice', 'bigText'].forEach((k) => { if (typeof n[k] === 'boolean') s.settings[k] = n[k]; });
+          ['music', 'sfx', 'voice', 'bigText', 'drink', 'wheel'].forEach((k) => { if (typeof n[k] === 'boolean') s.settings[k] = n[k]; });
           if (st.kind !== 'lobby' && st.kind !== 'end') return this.changed();
           if ([1, 2, 3].includes(n.spice)) s.settings.spice = n.spice;
           if (SLOTS[n.length]) s.settings.length = n.length;
@@ -1395,6 +1440,17 @@
           if ([0, 2, 3].includes(n.teams)) { s.settings.teams = n.teams; this.balanceTeams(false); }
           if (n.theme === '' || THEMES[n.theme]) s.settings.theme = n.theme;
           if (n.mode === 'quiz' || n.mode === 'bord') s.settings.mode = n.mode;
+          if (typeof n.pack === 'string') {
+            const pk = (GN.PACKS || []).find((x) => x.id === n.pack);
+            if (pk) {
+              s.settings.pack = pk.id;
+              s.settings.mode = pk.mode || 'quiz';
+              s.settings.theme = pk.theme && THEMES[pk.theme] ? pk.theme : '';
+              if (pk.length && SLOTS[pk.length]) s.settings.length = pk.length;
+              s.settings.rounds = {};
+              if (pk.rounds) ROUND_KEYS.forEach((k) => (s.settings.rounds[k] = pk.rounds.includes(k)));
+            }
+          } else if (n.rounds || n.theme !== undefined || n.mode) s.settings.pack = 'eigen';
           if (n.rounds && typeof n.rounds === 'object') {
             ROUND_KEYS.forEach((k) => { if (typeof n.rounds[k] === 'boolean') s.settings.rounds[k] = n.rounds[k]; });
           }
@@ -1480,6 +1536,8 @@
     }
     needAnswers() {
       const st = this.s.step;
+      if (EXT.steps[st.kind]) return EXT.steps[st.kind].need ? EXT.steps[st.kind].need.call(this, st) : null;
+      if (st.kind === 'rad') { const sp = this.s.players[st.spinner]; return sp && (sp.connected || sp.isBot) ? [sp] : []; }
       switch (st.kind) {
         case 'mc': case 'tf': case 'num': case 'bet': case 'bluffWrite': case 'bluffVote': case 'order': case 'ken': case 'wie': case 'poll': case 'wzWrite': case 'wager': case 'final':
           return this.active();
@@ -1512,7 +1570,11 @@
     }
     timeout() {
       const st = this.s.step;
+      if (EXT.steps[st.kind]) return EXT.steps[st.kind].timeout.call(this, st);
       switch (st.kind) {
+        case 'cast': return this.nextRound();
+        case 'rad': return this.spinWheel();
+        case 'radSpin': return this.nextRound();
         case 'intro': return this.nextQuestion();
         case 'highlights': return this.newStep('end', st.endData, 0);
         case 'catpick': return this.resolveCatPick(null);
@@ -1551,11 +1613,44 @@
           if (st.of === 'tk' && r.tk && r.tk.idx < r.tk.entries.length - 1) { r.tk.idx++; return this.tkFake(); }
           if (st.of === 'lg' && r.lg && r.lg.idx < r.lg.entries.length - 1) { r.lg.idx++; return this.lgGuess(); }
           if (st.of === 'kt' && r.kt && r.kt.idx < r.kt.stories.length - 1) { r.kt.idx++; return this.ktVote(); }
+          if (EXT.reveals[st.of] && EXT.reveals[st.of].next && EXT.reveals[st.of].next.call(this, st, r)) return;
           r.done++;
           return this.nextQuestion();
         }
-        case 'scores': return this.nextRound();
+        case 'scores': return this.afterScores();
       }
+    }
+    // ---------- Rad van Fortuin voor de laatste plaats ----------
+    afterScores() {
+      const s = this.s;
+      const n = this.contestants().length;
+      const left = s.plan.length - 1 - s.roundIdx;
+      if (s.settings.wheel && s.settings.mode !== 'bord' && n >= 3 && s.roundIdx % 2 === 1 && left >= 1) {
+        const lp = this.lastPlace();
+        if (lp) { s.wheels = (s.wheels || 0) + 1; return this.newStep('rad', { spinner: lp.id, segs: WHEEL.map((w) => w.label) }, 15); }
+      }
+      this.nextRound();
+    }
+    spinWheel() {
+      const st = this.s.step;
+      if (st.kind !== 'rad') return;
+      const sp = this.s.players[st.spinner];
+      const idx = Math.floor(this.rand() * WHEEL.length);
+      const w = WHEEL[idx];
+      const gains = {};
+      let text = '';
+      if (!sp) text = 'Niemand om te draaien…';
+      else if (w.k === 'p') { gains[sp.id] = w.v; text = `${sp.name} wint ${w.v} punten!`; }
+      else if (w.k === 'all') { this.contestants().forEach((p) => (gains[p.id] = w.v)); text = `Gul! Iedereen krijgt ${w.v} punten.`; }
+      else if (w.k === 'pu') { const type = this.pick(PU_KEYS); if (sp.powerups.length < 3) sp.powerups.push(type); text = `${sp.name} krijgt power-up ${POWERUPS[type].emoji} ${POWERUPS[type].name}!`; }
+      else if (w.k === 'steal') {
+        const top = this.contestants().filter((p) => p.id !== sp.id).sort((a, b) => b.score - a.score)[0];
+        const take = top ? Math.min(w.v, Math.max(0, top.score)) : 0;
+        if (top && take) { gains[sp.id] = take; gains[top.id] = -take; sp.stats.stolen += take; text = `${sp.name} steelt ${take} punten van ${top.name}!`; }
+        else text = `${sp.name} wilde stelen, maar er viel niks te halen.`;
+      } else text = `Helaas, ${sp.name}… dit keer niks.`;
+      Object.entries(gains).forEach(([pid, g]) => { const p = this.s.players[pid]; if (p) p.score += g; });
+      this.newStep('radSpin', { spinner: st.spinner, segs: st.segs, idx, text, gains }, 11);
     }
 
     // ---------- punten ----------
@@ -1601,6 +1696,7 @@
         p.stats.best = Math.max(p.stats.best || 0, g);
       });
       try { this.noteHighlight(data); } catch (e) {}
+      if (data.judged === undefined) data.judged = !NOJUDGE.includes(data.of);
       this.newStep('reveal', data, secs || SHOW.reveal);
     }
     noteHighlight(r) {
@@ -1862,7 +1958,7 @@
 
     // ---------- views ----------
     pub(p) {
-      return { id: p.id, name: p.name, avatar: p.avatar, color: p.color, score: p.score, connected: p.connected, isBot: p.isBot, playing: p.playing, gm: this.s.gm === p.id, powerups: p.powerups.length, team: p.team == null ? null : p.team, pos: p.pos || 0, skip: p.skip || 0 };
+      return { id: p.id, name: p.name, avatar: p.avatar, color: p.color, nick: p.nick || null, score: p.score, connected: p.connected, isBot: p.isBot, playing: p.playing, gm: this.s.gm === p.id, powerups: p.powerups.length, team: p.team == null ? null : p.team, pos: p.pos || 0, skip: p.skip || 0 };
     }
     remaining() {
       const st = this.s.step;
@@ -1893,7 +1989,11 @@
       if (st.kind === 'intro') v.introRound = st.round;
       if (st.cat) v.cat = this.catInfo(st.cat);
       if (st.q) v.q = { q: st.q.q, unit: st.q.unit, fact: st.q.fact, lo: st.q.lo, hi: st.q.hi, fmt: st.q.fmt, img: st.q.img, emoji: st.q.emoji, answer: undefined };
+      if (EXT.steps[st.kind] && EXT.steps[st.kind].tv) EXT.steps[st.kind].tv.call(this, st, v);
       switch (st.kind) {
+        case 'cast': v.cast = st.cast; break;
+        case 'rad': v.spinner = st.spinner; v.segs = st.segs; break;
+        case 'radSpin': v.spinner = st.spinner; v.segs = st.segs; v.idx = st.idx; v.text = st.text; v.gains = st.gains; break;
         case 'catpick': v.picker = st.picker; v.options = st.options.map((c) => this.catInfo(c)); v.chosen = st.chosen; break;
         case 'mc': case 'final': case 'tf': v.options = st.options; if (st.kind === 'final') v.wagers = st.wagers; break;
         case 'wzWrite': v.text = st.text; break;
@@ -1971,9 +2071,29 @@
         v.key = 'host:' + st.id;
         return v;
       }
+      if (EXT.steps[st.kind] && EXT.steps[st.kind].phone) { EXT.steps[st.kind].phone.call(this, st, v, id); return v; }
       switch (st.kind) {
+        case 'cast': {
+          v.screen = 'wait';
+          v.big = p.avatar; v.title = `${p.name}, ${p.nick || 'de Speler'}`; v.sub = 'Zo word je vanavond voorgesteld. Kijk naar de TV!';
+          v.noRoom = true;
+          break;
+        }
+        case 'rad':
+          if (st.spinner === id) { v.screen = 'spin'; }
+          else { v.screen = 'wait'; v.big = '🎡'; v.title = 'Rad van Fortuin'; v.sub = `${this.name(st.spinner)} staat laatst en mag draaien!`; v.noRoom = true; }
+          break;
+        case 'radSpin': {
+          v.screen = 'wait';
+          const g = (st.gains || {})[id] || 0;
+          v.big = '🎡'; v.title = g > 0 ? `+${g}` : g < 0 ? `${g}` : 'Het rad draait…'; v.sub = 'Kijk naar de TV!';
+          v.noRoom = true;
+          break;
+        }
         case 'lobby':
           v.screen = 'lobby';
+          v.packs = (GN.PACKS || []).map((x) => ({ id: x.id, name: x.name, emoji: x.emoji, desc: x.desc }));
+          v.minPlayers = MINP;
           v.players = this.players.map((x) => this.pub(x));
           v.key = 'lobby';
           v.spiceList = GN.SPICE.filter(Boolean);
@@ -2142,6 +2262,7 @@
         case 'mc': case 'final': {
           v.screen = 'choice';
           v.q = qtext;
+          if (st.q && st.q.emoji) v.emoji = st.q.emoji;
           v.options = st.options;
           v.myAnswer = st.answers[id];
           const pu = st.powerups[id];
@@ -2209,6 +2330,7 @@
           v.big = g > 0 ? '🎉' : g < 0 ? '💸' : '😶';
           v.title = g > 0 ? `+${g}` : g < 0 ? `${g}` : 'Geen punten';
           v.sub = this.resultLine(id, st);
+          v.sip = !!s.settings.drink && st.judged !== false && g <= 0;
           break;
         }
         case 'scores':
@@ -2235,6 +2357,7 @@
       return v;
     }
     resultLine(id, st) {
+      if (EXT.reveals[st.of] && EXT.reveals[st.of].line) return EXT.reveals[st.of].line.call(this, id, st);
       switch (st.of) {
         case 'mc': return st.right.includes(id) ? 'Goed!' : `Het was: ${st.options[st.correct]}`;
         case 'final': return st.right.includes(id) ? 'Goed! Inzet verdubbeld 💰' : `Fout… het was: ${st.options[st.correct]}`;
@@ -2280,6 +2403,7 @@
   }
 
   GN.Engine = Engine;
+  GN.ENG = { ROUNDS, COUNTS, ORDER, TIME, SHOW, EXT, WHEEL, NICKS, norm };
   GN.ROUNDS = ROUNDS;
   GN.TEAMS = TEAMS;
   GN.THEMES = THEMES;
