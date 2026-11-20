@@ -1719,6 +1719,19 @@
         add({ k: 'wz', text: r.entry, q: r.text, by: [r.author], n: wrong + 1 });
       } else if (r.of === 'wie') {
         (r.top || []).forEach((id) => add({ k: 'wie', text: r.text, by: [id], n: (r.count || {})[id] || 0 }));
+      } else if (r.of === 'kd' && r.cow) {
+        const g = (r.groups || []).find((x) => x.ids.includes(r.cow));
+        if (g) add({ k: 'koe', text: g.text, q: r.text, by: [r.cow], n: 1 });
+      } else if (r.of === 'gf') {
+        const close = Object.values(r.guesses || {}).filter((x) => Math.abs(x - r.target) <= 10).length;
+        add({ k: 'gf', text: r.clue, q: `${r.lo} ↔ ${r.hi}`, by: [r.hot], n: close });
+      } else if (r.of === 'tt') {
+        (r.top || []).forEach((i) => {
+          const x = r.items[i];
+          if (!x || !x.author) return;
+          if (x.t === 'draw') add({ k: 'ttd', drawing: x.d, text: i && r.items[i - 1] ? r.items[i - 1].text : '', by: [x.author], n: (r.counts || {})[i] || 0 });
+          else add({ k: 'tt', text: x.text, by: [x.author], n: (r.counts || {})[i] || 0 });
+        });
       } else if ((r.of === 'mc' || r.of === 'tf') && r.right && r.right.length === 0 && this.contestants().length > 1) {
         add({ k: 'hard', text: r.q.q, answer: r.options[r.correct], by: [], n: 1 });
       }
@@ -1726,7 +1739,7 @@
     buildHighlights() {
       const H = this.s.highlights || [];
       const best = (k) => H.filter((h) => h.k === k && (!h.by.length || h.by.some((id) => this.s.players[id]))).sort((a, b) => b.n - a.n)[0];
-      const order = ['bluff', 'tk', 'kt', 'iv', 'lg', 'echt', 'tkfake', 'wz', 'wie', 'hard'];
+      const order = ['bluff', 'tk', 'ttd', 'kt', 'iv', 'tt', 'lg', 'echt', 'gf', 'koe', 'tkfake', 'wz', 'wie', 'hard'];
       return order.map(best).filter(Boolean).slice(0, 6);
     }
 

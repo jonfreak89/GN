@@ -543,7 +543,7 @@
     const pk = (GN.PACKS || []).find((x) => x.id === v.settings.pack);
     const pkc = pk ? `<span class="packchip">${pk.emoji} ${esc(pk.name)}</span>` : v.settings.pack === 'eigen' ? '<span class="packchip">🛠️ Eigen mix</span>' : '';
     const dr = v.settings.drink ? '<span>🍺 Drankspel</span>' : '';
-    return `${pkc}${pk && (pk.theme || pk.mode) ? '' : th + md}${dr}<span>${sp.emoji} ${sp.name}</span><span>⏱️ ${esc(v.settings.length)} (${GN.LENGTHS[v.settings.length]})</span>${v.settings.teams ? `<span>👥 ${v.settings.teams} teams</span>` : ''}${v.settings.voice ? '<span>🔊 Voorlezen</span>' : ''}${!v.settings.gmPlays ? '<span>🎙️ Spelleider presenteert</span>' : ''}${off.length && !pk ? `<span>🚫 Zonder: ${esc(off.join(', '))}</span>` : ''}`;
+    return `${pkc}${pk && (pk.theme || pk.mode) ? '' : th + md}${dr}<span>${sp.emoji} ${sp.name}</span><span>⏱️ ${esc(v.settings.length)} (${GN.LENGTHS[v.settings.length]})</span>${v.settings.teams ? `<span>👥 ${v.settings.teams} teams</span>` : ''}${v.settings.voice ? '<span>🔊 Voorlezen</span>' : ''}${!v.settings.gmPlays ? '<span>🎙️ Spelleider presenteert</span>' : ''}${off.length && !pk ? `<span>🚫 Zonder: ${esc(off.join(', '))}</span>` : ''}${pk ? `<span class="packdesc">${esc(pk.desc)}</span>` : ''}`;
   };
   const lobbyHint = (v) => {
     const gm = v.players.find((p) => p.gm);
@@ -847,12 +847,16 @@
         wz: ['🗯️', 'Opvallendste antwoord', () => ''],
         wie: ['🫵', 'Volgens de groep…', () => ''],
         hard: ['🤯', 'Hier liep iedereen op stuk', () => ''],
+        koe: ['🐄', 'De roze koe', () => 'dacht als enige iets anders'],
+        gf: ['📡', 'Op dezelfde golflengte', (h) => `${h.n} ${h.n === 1 ? 'speler zat' : 'spelers zaten'} er vlakbij`],
+        tt: ['☎️', 'Beste zin uit Teken-telefoon', (h) => `${h.n} ${h.n === 1 ? 'stem' : 'stemmen'}`],
+        ttd: ['☎️', 'Beste tekening uit Teken-telefoon', (h) => `${h.n} ${h.n === 1 ? 'stem' : 'stemmen'}`],
       };
       return `<div class="hlshow">
         <div class="rno">Terugblik</div>
         <div class="hlslides">${v.slides.map((h, i) => {
           const [e, title, sub] = T[h.k] || ['⭐', 'Hoogtepunt', () => ''];
-          const body = h.k === 'tk' ? `<div class="hldraw">${GN.drawingSvg(h.drawing)}</div><div class="hlq">“${esc(h.text)}”</div>`
+          const body = h.k === 'tk' || h.k === 'ttd' ? `<div class="hldraw">${GN.drawingSvg(h.drawing)}</div><div class="hlq">“${esc(h.text)}”</div>`
             : h.k === 'hard' ? `<div class="hlq">${esc(h.text)}</div><div class="hlbig small">${esc(h.answer)}</div>`
             : h.k === 'wie' ? `<div class="hlq">${esc(h.text)}</div>`
             : `${h.q ? `<div class="hlq">${fmtQ(h.q)}</div>` : ''}<div class="hlbig">“${esc(h.text)}”</div>`;
