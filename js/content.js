@@ -161,16 +161,22 @@ GN.HOWTO = {
   woord: [['🙈', 'Eén speler moet een geheim woord raden'], ['☝️', 'De rest geeft elk een hint van precies één woord'], ['✖️', 'Dubbele hints vallen weg, dus wees origineel']],
   emoji: [['😎', 'Op de TV staan emoji\'s'], ['🤔', 'Welke film, welk lied of welk gezegde is het?'], ['✅', 'Kies het goede antwoord op je telefoon']],
   telefoon: [['✍️', 'Schrijf een zin'], ['🎨', 'De volgende tekent hem, de volgende beschrijft die tekening'], ['😂', 'Aan het eind zie je hoe het ontspoorde']],
+  waarsch: [['❓', 'Wie van jullie zou het eerst…?'], ['👉', 'Wijs iemand aan op je telefoon (niet jezelf)'], ['🐑', 'Stem je met de meerderheid mee? 100 punten']],
+  liever: [['⚖️', 'Twee keuzes, allebei vreselijk (of heerlijk)'], ['👆', 'Kies wat jij liever hebt'], ['🔮', 'Voorspel wat de meesten kiezen: goed = 100 punten']],
+  duel: [['✍️', 'Je krijgt twee vragen: verzin het grappigste antwoord'], ['🤺', 'Steeds duelleren twee antwoorden tegen elkaar'], ['🗳️', 'De rest stemt. Alle stemmen? Dan ben je de Grapjas!']],
+  kaarten: [['🃏', 'Een zwarte kaart met een gat'], ['🤍', 'Leg je grofste of grappigste witte kaart (of schrijf er zelf een)'], ['👑', 'De koning van de beurt kiest de winnaar: 100 punten']],
   final: [['💰', 'Eén laatste vraag'], ['🎲', 'Zet zoveel van je punten in als je durft'], ['🏆', 'Goed = je inzet erbij, fout = je inzet kwijt']],
 };
 
 /* ---------- Speelpakketten: kant-en-klare avonden ---------- */
 GN.PACKS = [
   { id: 'mix', name: 'De grote mix', emoji: '🎉', desc: 'Van alles wat: de TV kiest een afwisselende avond.' },
+  { id: 'feest', name: 'Feestje', emoji: '🥳', desc: 'Lachen en elkaar afkraken: grapjas-duels, wie van ons, liever-of en kaarten.', rounds: ['duel', 'waarsch', 'liever', 'kaarten', 'kudde', 'emoji', 'tf'] },
+  { id: 'zwart', name: 'Zwart & grof', emoji: '🖤', desc: '18+. Zwarte humor, grove kaarten en smakeloze duels. Niet voor teerhartigen.', spice: 3, rounds: ['kaarten', 'duel', 'waarsch', 'liever', 'wiezei', 'bluff', 'kudde'] },
   { id: 'snel', name: 'Snel potje', emoji: '⚡', desc: 'Kort en vlot: meerkeuze, waar of nep, emoji\'s en hoger/lager.', length: 'kort', rounds: ['mc', 'tf', 'emoji', 'hl'] },
   { id: 'kennis', name: 'Kennisquiz', emoji: '🧠', desc: 'Voor de betweters: vragen, schatten, volgorde, Lingo en De Puzzel.', rounds: ['mc', 'tf', 'emoji', 'hl', 'num', 'order', 'lingo', 'puzzel'] },
-  { id: 'bluf', name: 'Bluf & bedrog', emoji: '🤥', desc: 'Liegen, verzinnen en elkaar erin luizen.', rounds: ['bluff', 'echt', 'leugen', 'wiezei', 'tf'] },
-  { id: 'kenje', name: 'Ken je elkaar?', emoji: '🫣', desc: 'Het gaat over jullie: hete stoel, Top 5, kudde en golflengte.', rounds: ['persoonlijk', 'top5', 'kudde', 'golf', 'leugen', 'wiezei'] },
+  { id: 'bluf', name: 'Bluf & bedrog', emoji: '🤥', desc: 'Liegen, verzinnen en elkaar erin luizen.', rounds: ['bluff', 'echt', 'leugen', 'wiezei', 'tf', 'duel'] },
+  { id: 'kenje', name: 'Ken je elkaar?', emoji: '🫣', desc: 'Het gaat over jullie: hete stoel, wie van ons, liever-of, Top 5, kudde en golflengte.', rounds: ['persoonlijk', 'waarsch', 'liever', 'top5', 'kudde', 'golf', 'leugen', 'wiezei'] },
   { id: 'samen', name: 'Samen sterk', emoji: '🤝', desc: 'Denk hetzelfde, voel elkaar aan en raad samen: kudde, golflengte, één woord.', rounds: ['kudde', 'golf', 'woord', 'top5', 'emoji'] },
   { id: 'creatief', name: 'Creatief', emoji: '🎨', desc: 'Tekenen en verhalen: Teken & Raad, Teken-telefoon, invulverhaal, verhalenketting.', rounds: ['teken', 'telefoon', 'invul', 'ketting', 'woord'] },
   { id: 'bord', name: 'Ganzenbord', emoji: '🪿', desc: 'Korte rondes, dobbelen en als eerste op vakje 40 staan.', mode: 'bord' },

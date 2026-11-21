@@ -1448,6 +1448,7 @@
               s.settings.mode = pk.mode || 'quiz';
               s.settings.theme = pk.theme && THEMES[pk.theme] ? pk.theme : '';
               if (pk.length && SLOTS[pk.length]) s.settings.length = pk.length;
+              if (pk.spice && GN.SPICE[pk.spice]) s.settings.spice = pk.spice;
               s.settings.rounds = {};
               if (pk.rounds) ROUND_KEYS.forEach((k) => (s.settings.rounds[k] = pk.rounds.includes(k)));
             }
@@ -1719,6 +1720,12 @@
         add({ k: 'wz', text: r.entry, q: r.text, by: [r.author], n: wrong + 1 });
       } else if (r.of === 'wie') {
         (r.top || []).forEach((id) => add({ k: 'wie', text: r.text, by: [id], n: (r.count || {})[id] || 0 }));
+      } else if (r.of === 'kk' && r.cards && r.cards[r.win]) {
+        const c = r.cards[r.win];
+        add({ k: 'kk', text: GN.fillBlack ? GN.fillBlack(r.black, c.text) : c.text, by: [c.author], n: 1 + (c.own ? 1 : 0) });
+      } else if (r.of === 'dl' && r.winner >= 0 && !r.walkover) {
+        const w = r.ans[r.winner];
+        add({ k: 'dl', text: w.text, q: r.prompt, by: [w.author], n: r.counts[r.winner] || 0 });
       } else if (r.of === 'kd' && r.cow) {
         const g = (r.groups || []).find((x) => x.ids.includes(r.cow));
         if (g) add({ k: 'koe', text: g.text, q: r.text, by: [r.cow], n: 1 });
@@ -1739,7 +1746,7 @@
     buildHighlights() {
       const H = this.s.highlights || [];
       const best = (k) => H.filter((h) => h.k === k && (!h.by.length || h.by.some((id) => this.s.players[id]))).sort((a, b) => b.n - a.n)[0];
-      const order = ['bluff', 'tk', 'ttd', 'kt', 'iv', 'tt', 'lg', 'echt', 'gf', 'koe', 'tkfake', 'wz', 'wie', 'hard'];
+      const order = ['kk', 'dl', 'bluff', 'tk', 'ttd', 'kt', 'iv', 'tt', 'lg', 'echt', 'gf', 'koe', 'tkfake', 'wz', 'wie', 'hard'];
       return order.map(best).filter(Boolean).slice(0, 6);
     }
 
@@ -1951,7 +1958,7 @@
       const ps = this.contestants().slice().sort((a, b) => (board ? (b.pos || 0) - (a.pos || 0) : 0) || b.score - a.score);
       const awards = [];
       const best = (key, title, emoji, fmt) => {
-        const top = this.contestants().slice().sort((a, b) => b.stats[key] - a.stats[key])[0];
+        const top = this.contestants().slice().sort((a, b) => (b.stats[key] || 0) - (a.stats[key] || 0))[0];
         if (top && top.stats[key] > 0) awards.push({ id: top.id, title, emoji, text: fmt(top.stats[key]) });
       };
       best('fooled', 'Bluffkoning', '🤥', (n) => `${n}× iemand erin geluisd`);
@@ -1962,6 +1969,8 @@
       best('stolen', 'Zakkenroller', '🦝', (n) => `${n} punten gestolen`);
       best('powerups', 'Chaosmaker', '💥', (n) => `${n} power-ups gebruikt`);
       best('wzRight', 'Detective', '🔎', (n) => `${n}× geraden wie wat zei`);
+      best('kkWins', 'Kaartenkoning', '🃏', (n) => `${n}× de koning aan het lachen gekregen`);
+      best('duelSweeps', 'Grapjas van de avond', '🤡', (n) => `${n}× alle stemmen in een duel`);
       best('scored', 'Puntenmachine', '🎯', (n) => `${n}× gescoord`);
       const teams = this.teamScores();
       const endData = { ranking: ps.map((p) => p.id), awards, teamRanking: teams ? teams.slice().sort((a, b) => b.score - a.score).map((t) => t.id) : null };
@@ -2108,6 +2117,8 @@
           v.screen = 'lobby';
           v.packs = (GN.PACKS || []).map((x) => ({ id: x.id, name: x.name, emoji: x.emoji, desc: x.desc }));
           v.minPlayers = MINP;
+          v.voiceInfo = this.voiceInfo || '';
+          v.voiceName = this.voiceName || '';
           v.players = this.players.map((x) => this.pub(x));
           v.key = 'lobby';
           v.spiceList = GN.SPICE.filter(Boolean);

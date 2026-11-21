@@ -26,6 +26,8 @@
   let shownJson = null;
   let status = 'idle';
   let ui = {}; // tijdelijke invoer per scherm
+  let redrawing = false; // scherm opnieuw tekenen zonder de invoer te wissen
+  const redraw = () => { redrawing = true; try { render(); } finally { redrawing = false; } };
   let sheet = null; // 'gm' | 'pu' | 'profile' | 'players'
 
   const screen = $('#screen');
@@ -94,7 +96,7 @@
     ['nerd', 'retro', 'sint', 'kerst'].forEach((t) => document.body.classList.toggle('theme-' + t, v.theme === t));
     const json = JSON.stringify(Object.assign({}, v, { remaining: 0, deadline: 0 }));
     const live = v.screen === 'lobby' || v.screen === 'host' || v.screen === 'end';
-    if (v.key !== shownKey || (live && json !== shownJson)) {
+    if (v.key !== shownKey || redrawing || (live && json !== shownJson)) {
       if (v.key !== shownKey) {
         ui = {};
         // jouw beurt: even trillen
@@ -184,7 +186,8 @@
   const ROUND_GROUPS = [
     ['Kennis', ['mc', 'tf', 'emoji', 'hl', 'num', 'order', 'lingo', 'puzzel']],
     ['Bluffen', ['bluff', 'echt', 'leugen', 'wiezei']],
-    ['Over jullie', ['persoonlijk', 'top5', 'kudde', 'golf']],
+    ['Over jullie', ['persoonlijk', 'waarsch', 'liever', 'top5', 'kudde', 'golf']],
+    ['Lachen', ['duel', 'kaarten']],
     ['Samen en creatief', ['woord', 'teken', 'telefoon', 'invul', 'ketting']],
   ];
   const optionButtons = (opts, hidden = [], extra = () => '') =>
@@ -291,6 +294,7 @@
         <details class="acc" data-acc="extra" ${acc.extra ? 'open' : ''}><summary>⚙️ Extra's<small>${[s.voice ? 'voorlezen' : '', s.drink ? 'drankspel' : '', s.music !== false ? 'muziek' : 'geen muziek'].filter(Boolean).join(' · ')}</small></summary>
           ${sw('gmPlays', 'Ik speel zelf mee', s.gmPlays, 'gmplays')}
           ${sw('voice', 'TV leest vragen voor 🗣️', s.voice, 'voice')}
+          ${s.voice || v.voiceInfo !== 'ok' ? `<p class="sub voicenote">${{ ok: `✅ De TV heeft een Nederlandse stem${v.voiceName ? ` (${esc(v.voiceName.replace(/^(Microsoft|Google)\s*/i, '').slice(0, 30))})` : ''}. Je hoort meteen een testzin.`, flemish: '🇧🇪 De TV heeft alleen een Vlaamse stem, die wordt gebruikt.', nodutch: '⚠️ Deze TV heeft geen Nederlandse stem, dus voorlezen werkt hier niet. Tip: open de TV-pagina in Chrome of Edge op een laptop en cast die.', none: '⚠️ Deze TV heeft geen voorleesstem. Tip: open de TV-pagina in Chrome of Edge op een laptop en cast die.', unsupported: '⚠️ Deze TV-browser kan niet voorlezen. Tip: Chrome of Edge op een laptop.', checking: '' }[v.voiceInfo || 'checking'] || ''}${s.voice && (v.voiceInfo === 'ok' || v.voiceInfo === 'flemish') ? ' Hoor je niks? Klik één keer op de TV.' : ''}</p>` : ''}
           ${sw('music', 'Muziek op de TV 🎵', s.music !== false)}
           ${sw('sfx', 'Geluidseffecten 🔔', s.sfx !== false)}
           ${sw('wheel', 'Rad van Fortuin voor de laatste 🎡', s.wheel !== false)}
@@ -480,6 +484,28 @@
         <div class="q" style="font-size:20px">${v.last ? 'Schrijf het einde van het verhaal!' : 'Schrijf de volgende zin'}</div>
         <textarea class="field" id="txt" maxlength="140" rows="3" autocomplete="off" placeholder="En toen…"></textarea>
         <button class="cta" id="send" disabled>Insturen</button>`;
+    },
+    liever(v) {
+      if (v.answered) return waitBox('Gekozen ✓', `Jij: <b>${esc(v.myAnswer.me ? v.b : v.a)}</b><br>De meesten kiezen volgens jou: <b>${esc(v.myAnswer.guess ? v.b : v.a)}</b>`);
+      ui.lv = ui.lv || {};
+      const step2 = ui.lv.me !== undefined;
+      return `<div class="catline">⚖️ Liever… of…?</div>
+        <div class="q" style="font-size:22px">${step2 ? 'En wat kiezen de <b>meesten</b>, denk je?' : 'Wat heb <b>jij</b> liever?'}</div>
+        <div class="lvbtns">${[0, 1].map((i) => `<button class="lvbtn ${i ? 'b' : 'a'} ${step2 && ui.lv.me === i ? 'mine' : ''}" data-lv="${i}"><b>${i ? 'B' : 'A'}</b><span>${esc(i ? v.b : v.a)}</span>${step2 && ui.lv.me === i ? '<small>jouw keus</small>' : ''}</button>`).join('<div class="lvor">of</div>')}</div>
+        <div class="sub center">${step2 ? 'Goed voorspeld = 100 punten' : 'Stap 1 van 2'}</div>
+        ${step2 ? '<button class="cta ghost small" id="lvback">↩︎ Andere keuze</button>' : ''}`;
+    },
+    cards(v) {
+      if (v.answered) return waitBox(v.judge ? 'Gekozen 👑' : 'Kaart gelegd 🃏', `<div class="pcard black">${esc(v.black).replace(/_{3,}/, `<u>${esc(String(v.myAnswer || '').replace(/[.!]+$/, ''))}</u>`)}</div>`);
+      ui.kk = ui.kk || { sel: null, own: false };
+      const own = !v.judge && ui.kk.own;
+      return `<div class="catline">${v.judge ? esc(v.judgeHead || '👑 Kies de beste kaart') : '🃏 Kaartenkoning · kies je kaart'}</div>
+        <div class="pcard black">${esc(v.black).replace(/_{3,}/, ui.kk.sel != null && !own ? `<u>${esc(String(v.hand[ui.kk.sel]).replace(/[.!]+$/, ''))}</u>` : '<span class="gap">_____</span>')}</div>
+        ${own ? `<input class="field" id="kkown" maxlength="60" autocomplete="off" placeholder="Schrijf je eigen witte kaart">
+          <div class="row"><button class="cta ghost" id="kkhand">↩︎ Mijn kaarten</button><button class="cta" id="kksendown" disabled>Leg deze kaart</button></div>`
+        : `<div class="pcards">${v.hand.map((t, i) => `<button class="pcard white ${ui.kk.sel === i ? 'sel' : ''}" data-kk="${i}" ${v.mine && v.mine[i] ? 'disabled' : ''}>${esc(t)}${v.mine && v.mine[i] ? '<small>van jou</small>' : ''}</button>`).join('')}</div>
+        ${v.judge ? '' : '<button class="cta ghost small" id="kkwrite">✏️ Zelf een kaart schrijven</button>'}
+        <div class="startbar"><button class="cta" id="kksend" ${ui.kk.sel == null ? 'disabled' : ''}>${v.judge ? 'Deze wint! 👑' : 'Leg deze kaart 🃏'}</button></div>`}`;
     },
     textin(v) {
       if (v.answered) return waitBox('Ingeleverd ✓', typeof v.myAnswer === 'string' ? `<b>"${esc(v.myAnswer)}"</b>` : '');
@@ -682,6 +708,30 @@
         on('#send', send);
         on('#sugg', () => { inp.value = v.suggest; ok(); });
         if (inp.tagName === 'INPUT') inp.onkeydown = (e) => { if (e.key === 'Enter') send(); };
+        break;
+      }
+      case 'liever': {
+        screen.querySelectorAll('[data-lv]').forEach((b) => (b.onclick = () => {
+          const i = +b.dataset.lv;
+          if (ui.lv.me === undefined) { ui.lv.me = i; redraw(); try { navigator.vibrate && navigator.vibrate(20); } catch (e) {} }
+          else act('answer', { v: { me: ui.lv.me, guess: i } });
+        }));
+        on('#lvback', () => { ui.lv = {}; redraw(); });
+        break;
+      }
+      case 'cards': {
+        const rerender = redraw;
+        screen.querySelectorAll('[data-kk]').forEach((b) => (b.onclick = () => { ui.kk.sel = +b.dataset.kk; rerender(); }));
+        on('#kksend', () => { if (ui.kk.sel != null) act('answer', { v: ui.kk.sel }); });
+        on('#kkwrite', () => { ui.kk.own = true; rerender(); setTimeout(() => $('#kkown') && $('#kkown').focus(), 50); });
+        on('#kkhand', () => { ui.kk.own = false; rerender(); });
+        const inp = $('#kkown');
+        if (inp) {
+          inp.oninput = () => ($('#kksendown').disabled = !inp.value.trim());
+          const send = () => { if (inp.value.trim()) act('answer', { v: { own: inp.value.trim() } }); };
+          on('#kksendown', send);
+          inp.onkeydown = (e) => { if (e.key === 'Enter') send(); };
+        }
         break;
       }
       case 'slider': {

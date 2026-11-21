@@ -146,18 +146,81 @@
   }
 
   // ---------- stem ----------
+  // Voorlezen via de stem van de browser. Valkuilen die we hier afvangen:
+  // - stemmen laden pas later (voiceschanged), en op veel TV's/Chromecasts is er geen enkele;
+  // - zonder Nederlandse stem leest een Engelse stem het Nederlands voor: dan liever niks;
+  // - Chrome praat pas na een klik/toets op de pagina, en stopt bij lange zinnen na ~15 s;
+  // - cancel() vlak voor speak() slikt soms de nieuwe zin in.
   let lastSpoken = 0;
-  function say(text) {
-    if (!engine.s.settings.voice || !('speechSynthesis' in window) || !text) return;
+  let nlVoice = null;
+  let voiceInfo = 'checking'; // ok | flemish | nodutch | none | unsupported | checking
+  const hasTTS = 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
+  function pickVoice() {
+    if (!hasTTS) { voiceInfo = 'unsupported'; return; }
+    const vs = speechSynthesis.getVoices() || [];
+    const score = (v) => {
+      const l = String(v.lang || '').replace('_', '-').toLowerCase();
+      if (!l.startsWith('nl')) return -1;
+      let n = l === 'nl-nl' ? 20 : 10; // Nederlands boven Vlaams
+      if (/natural|online|neural/i.test(v.name)) n += 6; // de mooie stemmen van Edge/Windows
+      if (/google/i.test(v.name)) n += 4;
+      if (v.localService) n += 1;
+      return n;
+    };
+    const best = vs.map((v) => [score(v), v]).filter((x) => x[0] >= 0).sort((a, b) => b[0] - a[0])[0];
+    nlVoice = best ? best[1] : null;
+    const prev = voiceInfo;
+    voiceInfo = nlVoice ? (best[0] >= 20 ? 'ok' : 'flemish') : vs.length ? 'nodutch' : 'none';
+    if (prev !== voiceInfo) { engine.voiceInfo = voiceInfo; engine.voiceName = nlVoice ? nlVoice.name : ''; try { engine.changed(); } catch (e) {} }
+  }
+  if (hasTTS) {
+    pickVoice();
+    try { speechSynthesis.addEventListener('voiceschanged', pickVoice); } catch (e) { speechSynthesis.onvoiceschanged = pickVoice; }
+    // sommige browsers sturen nooit voiceschanged: nog een paar keer zelf kijken
+    [500, 1500, 4000].forEach((ms) => setTimeout(pickVoice, ms));
+  } else voiceInfo = 'unsupported';
+  // lange tekst in stukjes van een paar zinnen, anders kapt Chrome halverwege af
+  const chunks = (t) => {
+    const parts = String(t).match(/[^.!?…]+[.!?…]*\s*/g) || [String(t)];
+    const out = [];
+    parts.forEach((x) => { const y = x.trim(); if (!y) return; if (out.length && (out[out.length - 1] + ' ' + y).length < 180) out[out.length - 1] += ' ' + y; else out.push(y); });
+    return out;
+  };
+  let keepAlive = null;
+  let sayT = null;
+  function say(text, force) {
+    if ((!engine.s.settings.voice && !force) || !hasTTS || !text) return;
+    if (!nlVoice) pickVoice();
+    if (!nlVoice) return; // geen Nederlandse stem: niet met een Engels accent gaan stuntelen
     try {
       speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text.replace(/_{2,}/g, 'puntje puntje'));
-      u.lang = 'nl-NL';
-      const voice = speechSynthesis.getVoices().find((v) => /^nl(-|_)NL/i.test(v.lang)) || speechSynthesis.getVoices().find((v) => /^nl/i.test(v.lang));
-      if (voice) u.voice = voice;
-      u.rate = 1.02;
-      speechSynthesis.speak(u);
+      clearTimeout(sayT);
+      const clean = String(text).replace(/_{2,}/g, 'puntje puntje').replace(/[\u{1F300}-\u{1FAFF}☀-➿️]/gu, '').replace(/\s+/g, ' ').trim();
+      if (!clean) return;
+      sayT = setTimeout(() => {
+        chunks(clean).forEach((c) => {
+          const u = new SpeechSynthesisUtterance(c);
+          u.voice = nlVoice;
+          u.lang = nlVoice.lang || 'nl-NL';
+          u.rate = 1.02;
+          speechSynthesis.speak(u);
+        });
+        lastSpoken = Date.now();
+        // Chrome-bug: lange spraak blijft hangen zonder af en toe resume()
+        clearInterval(keepAlive);
+        keepAlive = setInterval(() => { if (!speechSynthesis.speaking) clearInterval(keepAlive); else { try { speechSynthesis.pause(); speechSynthesis.resume(); } catch (e) {} } }, 10000);
+      }, 80);
     } catch (e) {}
+  }
+  // voorlezen net aangezet: meteen even proberen, dan hoor je of het werkt
+  let voiceWas = null;
+  function voiceCheck() {
+    const on = !!engine.s.settings.voice;
+    if (voiceWas === false && on) {
+      if (nlVoice) say('Hallo, ik ben Joep. Ik lees de vragen voor.', true);
+      else Show.say(voiceInfo === 'unsupported' || voiceInfo === 'none' ? 'Deze TV heeft geen voorleesstem. Jammer, dan lees ik niet voor.' : 'Deze TV heeft geen Nederlandse stem. Voorlezen werkt hier helaas niet.', 'sad');
+    }
+    voiceWas = on;
   }
 
   // ---------- show: Joep, geluid, achtergrond ----------
@@ -186,6 +249,10 @@
       top5: ['Hete stoel! Laat maar zien hoe goed jullie elkaar kennen.'],
       wiezei: ['Anoniem… dat denken ze tenminste.'],
       final: ['De finale! Alles of niets.', 'Laatste kans. Durf jij alles in te zetten?'],
+      waarsch: ['Wie van jullie…? Wijs maar aan. Ik zeg niks.', 'Vriendschappen gaan op de proef. Lekker.'],
+      liever: ['Liever dit of liever dat? Allebei vreselijk, ik weet het.', 'Kiezen is verliezen. Succes!'],
+      duel: ['Tijd voor een duel! Grappig zijn mag, smakeloos ook.', 'Wie is vanavond de grapjas? We gaan het zien.'],
+      kaarten: ['Kaartenkoning! Hoe smakelozer, hoe beter.', 'Leg je grofste kaart. De koning beslist. Ik kijk weg.'],
     },
     wait: ['We wachten nog op {naam}… 🥱', '{naam}, de rest zit te wachten hoor!', 'Neem je tijd, {naam}. Maar niet té veel.', 'Tik tak, {naam}…'],
     none: ['Niemand?! Ik schaam me een beetje voor jullie.', 'Nul goed. Echt nul. Knap hoor.', 'Oei. Die was blijkbaar te moeilijk.', 'Zelfs ik wist het. En ik ben een maan.'],
@@ -213,9 +280,10 @@
   soundHint.className = 'soundhint';
   soundHint.innerHTML = '🔇 Klik voor geluid';
   soundHint.onclick = () => Sound.unlock();
+  Sound.onUnlock(() => pickVoice());
   document.body.appendChild(soundHint);
   Sound.onUnlock(() => { soundHint.remove(); applyMood(lastView, true); });
-  const ANSWERING = new Set(['catpick', 'mc', 'tf', 'num', 'bet', 'bluffWrite', 'bluffVote', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'wzGuess', 'hl', 'lingo', 'puzzel', 'kdWrite', 'gfClue', 'gfGuess', 'ewClue', 'ewGuess', 'tt', 'ttShow', 'tkDraw', 'tkFake', 'tkVote', 'lgWrite', 'lgGuess', 'top5', 'roll', 'ivWrite', 'ivVote', 'ktWrite', 'ktVote', 'wager', 'final']);
+  const ANSWERING = new Set(['lvPick', 'dlWrite', 'dlVote', 'kkPlay', 'kkJudge', 'catpick', 'mc', 'tf', 'num', 'bet', 'bluffWrite', 'bluffVote', 'order', 'ken', 'wie', 'poll', 'wzWrite', 'wzGuess', 'hl', 'lingo', 'puzzel', 'kdWrite', 'gfClue', 'gfGuess', 'ewClue', 'ewGuess', 'tt', 'ttShow', 'tkDraw', 'tkFake', 'tkVote', 'lgWrite', 'lgGuess', 'top5', 'roll', 'ivWrite', 'ivVote', 'ktWrite', 'ktVote', 'wager', 'final']);
   function moodFor(v) {
     if (!v) return 'off';
     if (v.paused) return 'calm';
@@ -365,6 +433,7 @@
   const valFmt = (q, v) => (q.fmt ? q.fmt.replace('{v}', numFmt(v)) : numFmt(v));
 
   function render() {
+    voiceCheck();
     const v = engine.tvView();
     lastView = v;
     renderTop();
@@ -854,6 +923,8 @@
         wie: ['🫵', 'Volgens de groep…', () => ''],
         hard: ['🤯', 'Hier liep iedereen op stuk', () => ''],
         koe: ['🐄', 'De roze koe', () => 'dacht als enige iets anders'],
+        kk: ['🃏', 'Smakeloosste kaart van de avond', () => 'gekozen door de koning'],
+        dl: ['🤺', 'Grapjas van de avond', (h) => `${h.n} ${h.n === 1 ? 'stem' : 'stemmen'}`],
         gf: ['📡', 'Op dezelfde golflengte', (h) => `${h.n} ${h.n === 1 ? 'speler zat' : 'spelers zaten'} er vlakbij`],
         tt: ['☎️', 'Beste zin uit Teken-telefoon', (h) => `${h.n} ${h.n === 1 ? 'stem' : 'stemmen'}`],
         ttd: ['☎️', 'Beste tekening uit Teken-telefoon', (h) => `${h.n} ${h.n === 1 ? 'stem' : 'stemmen'}`],

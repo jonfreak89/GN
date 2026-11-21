@@ -516,3 +516,51 @@ body.bigtext #board .pchip { font-size: 0.85em; }
 .ttby i { font-style: normal; width: 1.6em; height: 1.6em; border-radius: 50%; display: grid; place-items: center; background: var(--c); }
 .lobby .joinbox { position: relative; z-index: 3; } /* sneeuw en pepernoten nooit over de QR-code */
 .settings span.packdesc { background: none; border: 0; padding-left: 0; color: var(--muted); flex: 1 1 100%; }
+
+/* ---------- Liever… of…? ---------- */
+.lvduo { display: flex; align-items: stretch; justify-content: center; gap: 1.2em; margin: 1.2em 0 1.2em; }
+.lvopt { flex: 1 1 0; max-width: 28em; background: var(--ink-2); border: 3px solid var(--a); border-radius: var(--radius); padding: 1.1em 1.2em 1.3em; display: flex; flex-direction: column; align-items: center; gap: 0.5em; position: relative; transition: opacity .4s, transform .4s; }
+.lvopt.b { border-color: var(--b); }
+.lvopt > b { font-family: var(--display); font-size: 1.6em; width: 1.7em; height: 1.7em; border-radius: 50%; display: grid; place-items: center; background: var(--a); color: var(--ink); }
+.lvopt.b > b { background: var(--b); }
+.lvopt > span { font-size: 2em; font-weight: 700; line-height: 1.2; text-wrap: balance; }
+.lvor { align-self: center; font-family: var(--display); font-size: 2.2em; color: var(--muted); font-style: italic; }
+.lvduo.res .lvopt.win { transform: scale(1.04); box-shadow: 0 0 0 6px rgba(255, 182, 39, .25); border-color: var(--amber); }
+.lvduo.res .lvopt.lose { opacity: .55; }
+.lvpct { font-family: var(--display); font-size: 3em; font-weight: 800; color: var(--amber); animation: pop .5s .4s both; }
+
+/* ---------- Grapjas-duel ---------- */
+.duelduo { display: flex; align-items: center; justify-content: center; gap: 1em; margin: 1.1em 0 .6em; }
+.duelcard { flex: 1 1 0; max-width: 30em; min-height: 6em; background: #fff8ec; color: var(--ink); border-radius: var(--radius); padding: 1em 1.2em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5em; position: relative; box-shadow: 0 10px 30px rgba(0, 0, 0, .35); transition: opacity .4s, transform .4s; }
+.duelcard.l { transform: rotate(-1.5deg); }
+.duelcard.r { transform: rotate(1.5deg); }
+.duelcard > b { position: absolute; top: -.7em; left: -.5em; background: var(--pink); color: white; font-family: var(--display); border-radius: 50%; width: 1.8em; height: 1.8em; display: grid; place-items: center; font-size: 1.2em; }
+.duelcard.r > b { background: var(--sky); left: auto; right: -.5em; }
+.duelcard > span { font-size: 2em; font-weight: 700; line-height: 1.2; text-wrap: balance; }
+.duelvs { font-family: var(--display); font-size: 2.6em; font-weight: 800; color: var(--amber); text-shadow: 0 0 20px rgba(255, 182, 39, .6); }
+.duelduo.res .duelcard.win { transform: scale(1.06) rotate(0); box-shadow: 0 0 0 6px var(--amber), 0 10px 30px rgba(0, 0, 0, .35); }
+.duelduo.res .duelcard.lose { opacity: .55; transform: scale(.95); }
+.duelcard .crown { position: absolute; top: -1.1em; font-size: 2.4em; animation: pop .5s .3s both; }
+.duelby { display: flex; align-items: center; gap: .6em; font-size: 1.05em; }
+.duelby em { font-style: normal; font-weight: 700; color: #6a5aa8; }
+.duelcard .who span { border-color: #fff8ec; }
+.ptag { display: inline-flex; align-items: center; gap: .3em; background: color-mix(in srgb, var(--c, #555) 30%, transparent); border: 2px solid var(--c, #555); border-radius: 99px; padding: .1em .6em .1em .2em; font-weight: 700; }
+.ptag i { font-style: normal; }
+.duelcard .ptag { color: var(--ink); }
+
+/* ---------- Kaartenkoning ---------- */
+.kkblack { background: #0b0b0b; color: #fff; border: 2px solid #333; border-radius: 16px; padding: 1em 1.3em; font-size: 2.3em; font-weight: 800; line-height: 1.25; max-width: 24em; margin: .8em auto .5em; text-align: left; box-shadow: 0 14px 40px rgba(0, 0, 0, .55); text-wrap: balance; }
+.kkblack.small { font-size: 1.6em; margin-top: .4em; }
+.kkblack .gap { color: #777; letter-spacing: .1em; }
+.kkblack u { text-decoration: none; color: var(--amber); border-bottom: 3px solid var(--amber); }
+.kkblack.win { animation: pop .6s both; }
+.kkking { font-size: 1.3em; margin: .6em 0; }
+.kkcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(13em, 1fr)); gap: .9em; margin: 1em auto .6em; max-width: 80em; }
+.kkwhite { background: #fff; color: #111; border-radius: 14px; padding: .9em 1em; min-height: 6.5em; display: flex; flex-direction: column; justify-content: space-between; text-align: left; box-shadow: 0 8px 22px rgba(0, 0, 0, .4); }
+.kkwhite span { font-size: 1.45em; font-weight: 800; line-height: 1.2; }
+.kkwhite small { color: #555; font-size: .95em; margin-top: .5em; }
+.kkcards.small .kkwhite { min-height: 4.5em; opacity: .55; }
+.kkcards.small .kkwhite span { font-size: 1.15em; }
+.kkcards.small .kkwhite.win { opacity: 1; box-shadow: 0 0 0 5px var(--amber); }
+.kkwinner { font-size: 1.6em; margin: .4em 0; animation: pop .5s .6s both; }
+.kkwinner small { font-size: .6em; color: var(--muted); }
