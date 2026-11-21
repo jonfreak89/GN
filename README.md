@@ -12,6 +12,14 @@ Iedereen kiest op zijn telefoon een naam, poppetje en kleur.
 
 Telefoon op slot of pagina herladen? Je komt vanzelf terug op je plek, met je punten. Crasht de TV, herlaad dan gewoon: het spel staat gepauzeerd klaar en de telefoons verbinden opnieuw.
 
+## Voorlezen
+
+Zet *TV leest vragen voor* aan bij Extra's. De TV gebruikt de Nederlandse stem van de browser en zegt meteen een testzin. Op je telefoon zie je of de TV een Nederlandse stem heeft.
+
+- Heeft de TV geen Nederlandse stem, dan leest hij niet voor (een Engelse stem die Nederlands probeert, is niet te harden). Veel smart-tv's en Chromecasts hebben geen stemmen.
+- Beste resultaat: open de TV-pagina in **Edge** (mooie "Natural"-stemmen) of Chrome op een laptop en cast of sluit die aan op de TV.
+- Hoor je niks? Klik één keer op het TV-scherm: browsers praten pas na een klik.
+
 ## Lastig netwerk? (gastenwifi, vakantiepark, hotspot)
 
 Normaal praten telefoons en TV rechtstreeks met elkaar. Op sommige netwerken mag dat niet. Game Night merkt dat binnen vijf seconden en gaat dan vanzelf via een omweg (gratis openbare berichtenservers). Je hoeft niks in te stellen. Op de telefoon zie je dan rechtsonder een klein 📡.
@@ -66,6 +74,10 @@ Na een minuutje staat het op `https://jonfreak89.github.io/GN/`.
 | Golflengte | Eén speler ziet een geheim punt op een schaal en geeft een hint, de rest schuift naar waar het ligt |
 | Eén woord | Iedereen geeft één hint van één woord, dubbele hints vallen weg, de rader moet het woord vinden |
 | Teken-telefoon | Zin → tekening → zin → tekening. Aan het eind zie je hoe het uit de hand liep |
+| Wie van ons…? | Wie van jullie zou het eerst…? Wijs iemand aan. Met de meerderheid mee = punten |
+| Liever… of…? | Twee keuzes. Kies wat jij liever hebt en voorspel wat de meesten kiezen |
+| Grapjas-duel | Iedereen beantwoordt twee vragen; steeds duelleren twee antwoorden, de rest stemt. Alle stemmen = Grapjas! |
+| Kaartenkoning | Zwarte kaart met een gat, iedereen legt de grofste witte kaart (of schrijft er zelf een). De koning kiest |
 | Finale | Zet in wat je durft op één laatste vraag |
 
 Extra's: de laatste plaats kiest de categorie, power-ups (Dubbel, 50/50, Stelen, Sabotage, Schild), troost-power-up voor de laatste na elke ronde, awards aan het eind, anonieme overslaan-knop bij 18+ vragen.
@@ -74,13 +86,13 @@ Extra's: de laatste plaats kiest de categorie, power-ups (Dubbel, 50/50, Stelen,
 
 **Ganzenbord:** kies als spelvorm *Ganzenbord* in plaats van *Quizshow*. Dan speel je korte rondes (kort 8, normaal 12, lang 16) en na elke ronde gooit iedereen op zijn telefoon de dobbelsteen. De beste drie van de ronde krijgen 3, 2 of 1 bonusstap. Met ganzen, brug, herberg, put, doolhof, gevangenis, dood, kansvakjes en sterren (power-up). Wie precies op 40 komt, wint.
 
-**Avonden:** de spelleider kiest met één tik een kant-en-klare avond: De grote mix, Snel potje, Kennisquiz, Bluf & bedrog, Ken je elkaar?, Samen sterk, Creatief, Ganzenbord, Sinterklaasavond, Kerstavond, Nerd-avond of Jaren 80 & 90. Onder *Zelf samenstellen* kun je alles nog met de hand aan- en uitzetten.
+**Avonden:** de spelleider kiest met één tik een kant-en-klare avond: De grote mix, Snel potje, Kennisquiz, Bluf & bedrog, Ken je elkaar?, Samen sterk, Creatief, Ganzenbord, Feestje, 🖤 Zwart & grof (18+), Sinterklaasavond, Kerstavond, Nerd-avond of Jaren 80 & 90. Onder *Zelf samenstellen* kun je alles nog met de hand aan- en uitzetten.
 
 **Thema-avonden:** 🎁 Sinterklaasavond (met pepernoten op het scherm), 🎄 Kerstavond (met sneeuw), 🧙 Nerd-avond (fantasy, sci-fi, superhelden, games, film, wetenschap) of 📼 Jaren 80 & 90 (jaren, kinder-tv, reclames, muziek, games, film). Het thema verandert ook de look op TV en telefoon.
 
 **Spice levels:** 😇 Braaf (kennis en rare weetjes) · 😈 Pittig (+ donkere humor) · 🌶️ Stout (+ 18+).
 
-**43 categorieën** (waarvan Sinterklaas en Kerst alleen op hun eigen avond), van Kennis (o.a. Nederland, geschiedenis, kunst & cultuur, merken & bedrijven, reizen) en Nerd (fantasy, sci-fi, superhelden) tot Nostalgie, Grappig & raar (o.a. domme criminelen, bier & kroeg), Donker (o.a. onopgeloste mysteries, oorlog & spionage), Pittig (kater & feestjes) en Stout (o.a. stoute geschiedenis). Samen ruim 1.800 vaste vragen, plus gegenereerde.
+**44 categorieën** (waarvan Sinterklaas en Kerst alleen op hun eigen avond), van Kennis (o.a. Nederland, geschiedenis, kunst & cultuur, merken & bedrijven, reizen) en Nerd (fantasy, sci-fi, superhelden) tot Nostalgie, Grappig & raar (o.a. domme criminelen, bier & kroeg), Donker (o.a. onopgeloste mysteries, oorlog & spionage, stomme doden), Pittig (kater & feestjes) en Stout (o.a. stoute geschiedenis). Samen bijna 2.000 vaste vragen, plus gegenereerde.
 
 **Nooit dezelfde vragen:** de TV onthoudt welke vragen al geweest zijn en herhaalt pas als een categorie op is. Schatten, volgorde en hoofdsteden worden ook gegenereerd uit datatabellen (duizenden combinaties).
 
