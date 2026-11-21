@@ -123,10 +123,16 @@
   function loadQr() {
     if (window.QRCode) return Promise.resolve();
     if (!qrLoaded) qrLoaded = new Promise((res, rej) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-      s.onload = res; s.onerror = rej;
-      document.head.appendChild(s);
+      // meerdere adressen: op sommige netwerken is er eentje geblokkeerd
+      const urls = ['https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js', 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js', 'https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js'];
+      const tryOne = (i) => {
+        if (i >= urls.length) { qrLoaded = null; return rej(); }
+        const s = document.createElement('script');
+        s.src = urls[i];
+        s.onload = res; s.onerror = () => { s.remove(); tryOne(i + 1); };
+        document.head.appendChild(s);
+      };
+      tryOne(0);
     });
     return qrLoaded;
   }
@@ -136,7 +142,7 @@
       el.dataset.done = '1';
       el.innerHTML = '';
       new window.QRCode(el, { text: joinUrl(), width: 512, height: 512, colorDark: '#0d0b1f', colorLight: '#fff8ec', correctLevel: window.QRCode.CorrectLevel.M });
-    }).catch(() => { el.innerHTML = '<div style="font-size:4em">📱</div>'; });
+    }).catch(() => { el.innerHTML = '<div style="text-align:center;color:#0d0b1f"><div style="font-size:3.4em">📱</div><div style="font-size:.95em;font-weight:700;padding:0 .6em">QR-code laden lukt niet.<br>Typ het adres hieronder in op je telefoon.</div></div>'; });
   }
 
   // ---------- stem ----------

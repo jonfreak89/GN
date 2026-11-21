@@ -71,7 +71,7 @@
 
   function renderBanner() {
     const b = $('#banner');
-    const map = { lost: 'Verbinding kwijt, opnieuw verbinden…', connecting: 'Verbinden met de TV…', nohost: 'TV niet gevonden. Klopt de code?', nolib: 'Geen internet?' };
+    const map = { lost: 'Verbinding kwijt, opnieuw verbinden…', connecting: 'Verbinden met de TV…', detour: 'Rechtstreeks lukt niet op dit netwerk. Ik probeer een omweg…', nohost: 'TV niet gevonden. Klopt de code?', nolib: 'Geen internet?' };
     const txt = view || status === 'nohost' ? (status === 'open' ? '' : map[status] || '') : '';
     b.textContent = txt;
     b.classList.toggle('hidden', !txt);
@@ -83,7 +83,7 @@
     if (!profile || !code) { bar.innerHTML = ''; return renderSetup(); }
     if (!view) {
       bar.innerHTML = '';
-      screen.innerHTML = `<div class="big">📡</div><div class="title">${status === 'nohost' ? 'TV niet gevonden' : 'Verbinden…'}</div>
+      screen.innerHTML = `<div class="big">📡</div><div class="title">${status === 'nohost' ? 'TV niet gevonden' : status === 'detour' ? 'Omweg zoeken…' : 'Verbinden…'}</div>${status === 'detour' ? '<p class="sub center">Rechtstreeks lukt niet op dit netwerk. Ik probeer het via een omweg.</p>' : ''}
         <p class="sub center">${status === 'nohost' ? `Staat de TV aan met code <b>${esc(code)}</b>?` : `Code <b>${esc(code)}</b>`}</p>
         <button class="cta ghost" id="chg">Andere code</button>`;
       $('#chg').onclick = () => { code = ''; if (client) client.destroy(); client = null; render(); };

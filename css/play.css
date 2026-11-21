@@ -260,3 +260,6 @@ textarea.field { resize: none; font-size: 17px; line-height: 1.4; }
 .grange::-moz-range-track { height: 18px; border-radius: 99px; background: linear-gradient(90deg, var(--sky), #9b7bff, var(--pink)); }
 .grange::-webkit-slider-thumb { -webkit-appearance: none; width: 40px; height: 40px; border-radius: 50%; background: white; border: 4px solid var(--amber); margin-top: -11px; box-shadow: 0 2px 8px rgba(0, 0, 0, .5); }
 .grange::-moz-range-thumb { width: 34px; height: 34px; border-radius: 50%; background: white; border: 4px solid var(--amber); }
+
+/* verbonden via de omweg (reserveweg): klein seintje rechtsonder */
+body.viarelay::after { content: '📡'; position: fixed; right: 6px; bottom: calc(4px + env(safe-area-inset-bottom)); font-size: 12px; opacity: .55; pointer-events: none; z-index: 50; }

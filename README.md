@@ -12,6 +12,15 @@ Iedereen kiest op zijn telefoon een naam, poppetje en kleur.
 
 Telefoon op slot of pagina herladen? Je komt vanzelf terug op je plek, met je punten. Crasht de TV, herlaad dan gewoon: het spel staat gepauzeerd klaar en de telefoons verbinden opnieuw.
 
+## Lastig netwerk? (gastenwifi, vakantiepark, hotspot)
+
+Normaal praten telefoons en TV rechtstreeks met elkaar. Op sommige netwerken mag dat niet. Game Night merkt dat binnen vijf seconden en gaat dan vanzelf via een omweg (gratis openbare berichtenservers). Je hoeft niks in te stellen. Op de telefoon zie je dan rechtsonder een klein 📡.
+
+- TV en telefoons hoeven **niet op hetzelfde netwerk** te zitten. Telefoons mogen dus gewoon op 4G/5G, terwijl de TV op de wifi zit.
+- Werkt de wifi helemaal niet: zet een hotspot aan op één telefoon en hang de TV daaraan.
+- Laadt de QR-code niet, typ dan het adres dat eronder staat in op je telefoon.
+- De omweg loopt via openbare servers met de spelcode als sleutel. Prima voor een spelletje, maar zet er geen geheimen in.
+
 ## De show
 
 - **Joep de Maan** presenteert: hij verwelkomt spelers, kondigt rondes aan, plaagt wie te lang nadenkt en reageert op de uitslag.
@@ -98,4 +107,4 @@ Tip: zet bij de verhalenrondes *TV leest vragen voor* aan, dan worden de verhale
 
 ## Techniek
 
-Losse HTML/JS, geen build-stap. Verbinding via [PeerJS](https://peerjs.com) (WebRTC, gratis publieke server). De TV is de host en draait de spelregels (`js/engine.js`); telefoons krijgen alleen hun eigen scherm doorgestuurd.
+Losse HTML/JS, geen build-stap. Verbinding via [PeerJS](https://peerjs.com) (WebRTC, gratis publieke server). Lukt dat niet, dan valt `js/net.js` terug op openbare MQTT-servers over WebSocket (testen met `?relay=1`, uitzetten met `?relay=0`). De TV is de host en draait de spelregels (`js/engine.js`); telefoons krijgen alleen hun eigen scherm doorgestuurd.
